@@ -1,0 +1,232 @@
+// ── Constants ──
+const BASE_URL = 'http://localhost:3000/api';
+
+// ── Error class ──
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+    public body?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+// ── Token helper ──
+// Reads the persisted auth token from Zustand's localStorage.
+// The authStore persists under key 'cs-auth' with shape: { state: { accessToken, ... } }
+function getToken(): string | null {
+  try {
+    const raw = localStorage.getItem('cs-auth');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function clearAuthState(): void {
+  localStorage.removeItem('cs-auth');
+  window.location.href = '/auth';
+}
+
+// ── Core fetch wrapper ──
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...((options.headers as Record<string, string>) || {}),
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 401) {
+    clearAuthState();
+    throw new ApiError(401, 'Unauthorized');
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, body?.message ?? 'Request failed', body);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+// ── Response types ──
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string | null;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: User;
+}
+
+export interface Session {
+  id: string;
+  userId: string;
+  title: string;
+  status: 'processing' | 'complete' | 'error';
+  duration: number;
+  frameCount: number;
+  urls: string[];
+  urlCount: number;
+  agentTarget: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+  processingTime: number;
+  prompt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Frame {
+  id: string;
+  sessionId: string;
+  timestamp: number;
+  url: string;
+  thumbnailUrl: string;
+  diffSummary: { added: number; changed: number; removed: number };
+  ariaTree: ARIANode[];
+  createdAt: string;
+}
+
+export interface ARIANode {
+  role: string;
+  name: string;
+  children?: ARIANode[];
+  diffStatus?: 'added' | 'changed' | 'removed';
+}
+
+export interface SessionWithFrames extends Session {
+  frames: Frame[];
+}
+
+export interface SessionStats {
+  totalSessions: number;
+  completedSessions: number;
+  totalDuration: number;
+  avgProcessingTime: number;
+}
+
+export interface Settings {
+  defaultAgent: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+  includeScreenshots: boolean;
+  inlineAriaTree: boolean;
+  includeRawDiff: boolean;
+  maxRecordingLength: number;
+}
+
+// ── Request payload types ──
+export interface SignupPayload {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface CreateSessionPayload {
+  title: string;
+  prompt?: string;
+  agentTarget?: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+  frameCount?: number;
+  urlCount?: number;
+}
+
+export interface UpdateSessionPayload {
+  title?: string;
+  status?: 'processing' | 'complete' | 'error';
+  duration?: number;
+  urls?: string[];
+  processingTime?: number;
+  prompt?: string;
+  agentTarget?: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+  frameCount?: number;
+  urlCount?: number;
+}
+
+export interface UpdateSettingsPayload {
+  defaultAgent?: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+  includeScreenshots?: boolean;
+  inlineAriaTree?: boolean;
+  includeRawDiff?: boolean;
+  maxRecordingLength?: number;
+}
+
+// ── Auth API ──
+export const auth = {
+  signup: (data: SignupPayload) =>
+    request<AuthResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  login: (data: LoginPayload) =>
+    request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  me: () => request<User>('/auth/me'),
+};
+
+// ── Sessions API ──
+export const sessions = {
+  list: () => request<Session[]>('/sessions'),
+
+  get: (id: string) => request<SessionWithFrames>(`/sessions/${id}`),
+
+  create: (data: CreateSessionPayload) =>
+    request<Session>('/sessions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: UpdateSessionPayload) =>
+    request<Session>(`/sessions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    request<void>(`/sessions/${id}`, {
+      method: 'DELETE',
+    }),
+
+  stats: () => request<SessionStats>('/sessions/stats'),
+};
+
+// ── Settings API ──
+export const settings = {
+  get: () => request<Settings>('/settings'),
+
+  update: (data: UpdateSettingsPayload) =>
+    request<Settings>('/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+};
+
+// ── Recordings API (placeholder for future endpoints) ──
+export const recordings = {};
