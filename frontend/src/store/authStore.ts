@@ -10,31 +10,23 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => void;
-  signup: (name: string, email: string, password: string) => void;
+  setAuth: (user: User, accessToken: string) => void;
   logout: () => void;
 }
-
-const MOCK_USER: User = {
-  id: 'usr_01',
-  name: 'Alex Chen',
-  email: 'alex@example.com',
-};
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      accessToken: null,
       isAuthenticated: false,
-      login: (_email: string, _password: string) => {
-        set({ user: MOCK_USER, isAuthenticated: true });
-      },
-      signup: (name: string, email: string, _password: string) => {
-        set({ user: { ...MOCK_USER, name, email }, isAuthenticated: true });
+      setAuth: (user: User, accessToken: string) => {
+        set({ user, accessToken, isAuthenticated: true });
       },
       logout: () => {
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, accessToken: null, isAuthenticated: false });
       },
     }),
     { name: 'cs-auth' }

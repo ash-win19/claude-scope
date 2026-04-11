@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
@@ -10,7 +11,10 @@ const steps = [
   { num: '03', title: 'Prompt', desc: 'Get a structured system prompt ready to paste into Claude Code, Codex, or Cursor.' },
 ];
 
-const Landing: React.FC = () => (
+const Landing: React.FC = () => {
+  const { loginWithRedirect } = useAuth0();
+
+  return (
   <div className="min-h-screen" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
     {/* Fixed header */}
     <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 h-14">
@@ -18,9 +22,7 @@ const Landing: React.FC = () => (
         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--cs-accent)' }} />
         <span className="text-sm font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Claude Scope</span>
       </Link>
-      <Link to="/auth">
-        <CSButton variant="ghost" size="sm">Sign in</CSButton>
-      </Link>
+      <CSButton variant="ghost" size="sm" onClick={() => loginWithRedirect()}>Sign in</CSButton>
     </header>
 
     {/* Hero */}
@@ -36,9 +38,7 @@ const Landing: React.FC = () => (
         Claude Scope records your screen, maps every component, and writes your Claude Code prompt for you.
       </p>
       <div className="flex items-center gap-3 mt-8">
-        <Link to="/auth">
-          <CSButton variant="primary" size="lg">Get started free →</CSButton>
-        </Link>
+        <CSButton variant="primary" size="lg" onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>Get started free →</CSButton>
         <a href="#how-it-works">
           <CSButton variant="ghost" size="lg">See how it works</CSButton>
         </a>
@@ -70,9 +70,7 @@ const Landing: React.FC = () => (
         <p className="text-base font-semibold" style={{ color: 'var(--cs-text-primary)' }}>
           Stop describing bugs with words.
         </p>
-        <Link to="/auth">
-          <CSButton variant="primary" size="lg">Start recording →</CSButton>
-        </Link>
+        <CSButton variant="primary" size="lg" onClick={() => loginWithRedirect()}>Start recording →</CSButton>
       </div>
     </section>
 
@@ -83,11 +81,10 @@ const Landing: React.FC = () => (
         <span className="text-sm font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Claude Scope</span>
         <CSMonoLabel>Built for developers</CSMonoLabel>
       </div>
-      <Link to="/auth">
-        <CSButton variant="ghost" size="sm">Sign in</CSButton>
-      </Link>
+      <CSButton variant="ghost" size="sm" onClick={() => loginWithRedirect()}>Sign in</CSButton>
     </footer>
   </div>
-);
+  );
+};
 
 export default Landing;

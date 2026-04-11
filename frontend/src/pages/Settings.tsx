@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
@@ -13,6 +14,13 @@ const Settings: React.FC = () => {
   const settings = useSettingsStore();
   const user = useAuthStore((s) => s.user);
   const { showToast } = useCSToast();
+  const { logout: auth0Logout } = useAuth0();
+  const storeLogout = useAuthStore((s) => s.logout);
+
+  const handleLogout = () => {
+    storeLogout();
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  };
 
   return (
     <AppShell maxWidth={640}>
@@ -84,9 +92,12 @@ const Settings: React.FC = () => {
         <CSMonoLabel>ACCOUNT</CSMonoLabel>
         <div className="flex flex-col gap-4 mt-4">
           <CSInput label="Name" value={user?.name || ''} readOnly />
-          <CSInput label="Email" value={user?.email || ''} readOnly hint="Connected via GitHub" />
-          <div className="flex justify-end">
-            <CSButton variant="primary" size="sm" onClick={() => showToast('Settings saved ✓', 'success')}>
+          <CSInput label="Email" value={user?.email || ''} readOnly hint="Managed by Auth0" />
+          <div className="flex justify-between">
+            <CSButton variant="secondary" size="sm" onClick={handleLogout}>
+              Sign out
+            </CSButton>
+            <CSButton variant="primary" size="sm" onClick={() => showToast('Settings saved', 'success')}>
               Save changes
             </CSButton>
           </div>
