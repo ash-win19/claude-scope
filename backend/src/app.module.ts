@@ -5,10 +5,11 @@ import { AuthModule } from './auth/auth.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SettingsModule } from './settings/settings.module';
 import { HealthController } from './health.controller';
+import { validateConfig } from './config/configuration';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateConfig }),
     DatabaseModule,
     AuthModule,
     SessionsModule,
