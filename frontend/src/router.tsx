@@ -1,0 +1,59 @@
+import React, { Suspense, lazy } from 'react';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+import { CSSkeleton } from '@/components/ui/CSSkeleton';
+
+// Lazy-loaded pages
+const Landing = lazy(() => import('@/pages/Landing'));
+const Auth = lazy(() => import('@/pages/Auth'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Sessions = lazy(() => import('@/pages/Sessions'));
+const SessionDetail = lazy(() => import('@/pages/SessionDetail'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const RecordNew = lazy(() => import('@/pages/RecordNew'));
+const Processing = lazy(() => import('@/pages/Processing'));
+const FrameReview = lazy(() => import('@/pages/FrameReview'));
+const Output = lazy(() => import('@/pages/Output'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+
+const PageSkeleton: React.FC = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
+    <CSSkeleton width={200} height={24} />
+    <CSSkeleton width={400} height={16} />
+    <CSSkeleton width={300} height={16} />
+  </div>
+);
+
+const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+};
+
+const wrap = (Component: React.LazyExoticComponent<React.FC>) => (
+  <Suspense fallback={<PageSkeleton />}>
+    <Component />
+  </Suspense>
+);
+
+const wrapAuth = (Component: React.LazyExoticComponent<React.FC>) => (
+  <AuthGuard>
+    <Suspense fallback={<PageSkeleton />}>
+      <Component />
+    </Suspense>
+  </AuthGuard>
+);
+
+export const router = createBrowserRouter([
+  { path: '/', element: wrap(Landing) },
+  { path: '/auth', element: wrap(Auth) },
+  { path: '/app', element: wrapAuth(Dashboard) },
+  { path: '/app/sessions', element: wrapAuth(Sessions) },
+  { path: '/app/sessions/:id', element: wrapAuth(SessionDetail) },
+  { path: '/app/settings', element: wrapAuth(Settings) },
+  { path: '/app/record/new', element: wrapAuth(RecordNew) },
+  { path: '/app/record/:id/processing', element: wrapAuth(Processing) },
+  { path: '/app/record/:id/review', element: wrapAuth(FrameReview) },
+  { path: '/app/record/:id/output', element: wrapAuth(Output) },
+  { path: '*', element: wrap(NotFound) },
+]);

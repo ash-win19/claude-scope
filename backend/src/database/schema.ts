@@ -1,0 +1,101 @@
+import {
+  pgTable,
+  text,
+  varchar,
+  integer,
+  timestamp,
+  jsonb,
+  pgEnum,
+} from 'drizzle-orm/pg-core';
+
+export const sessionStatusEnum = pgEnum('session_status', [
+  'processing',
+  'complete',
+  'error',
+]);
+
+export const agentTypeEnum = pgEnum('agent_type', [
+  'claude',
+  'codex',
+  'cursor',
+  'raw',
+]);
+
+export const users = pgTable('users', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  avatarUrl: text('avatar_url'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const sessions = pgTable('sessions', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  status: sessionStatusEnum('status').notNull().default('processing'),
+  duration: integer('duration').notNull().default(0),
+  frameCount: integer('frame_count').notNull().default(0),
+  urls: jsonb('urls').$type<string[]>().notNull().default([]),
+  processingTime: integer('processing_time').notNull().default(0),
+  prompt: text('prompt').notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export interface ARIANodeJson {
+  role: string;
+  name: string;
+  children?: ARIANodeJson[];
+  diffStatus?: 'added' | 'changed' | 'removed';
+}
+
+export interface DiffSummaryJson {
+  added: number;
+  changed: number;
+  removed: number;
+}
+
+export const frames = pgTable('frames', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  sessionId: varchar('session_id', { length: 36 })
+    .notNull()
+    .references(() => sessions.id, { onDelete: 'cascade' }),
+  timestamp: integer('timestamp').notNull().default(0),
+  url: text('url').notNull(),
+  thumbnailUrl: text('thumbnail_url').notNull(),
+  diffSummary: jsonb('diff_summary')
+    .$type<DiffSummaryJson>()
+    .notNull()
+    .default({ added: 0, changed: 0, removed: 0 }),
+  ariaTree: jsonb('aria_tree').$type<ARIANodeJson[]>().notNull().default([]),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const userSettings = pgTable('user_settings', {
+  userId: varchar('user_id', { length: 36 })
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  defaultAgent: agentTypeEnum('default_agent').notNull().default('claude'),
+  includeScreenshots: integer('include_screenshots').notNull().default(1),
+  inlineAriaTree: integer('inline_aria_tree').notNull().default(1),
+  includeRawDiff: integer('include_raw_diff').notNull().default(0),
+  maxRecordingLength: integer('max_recording_length').notNull().default(30),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
