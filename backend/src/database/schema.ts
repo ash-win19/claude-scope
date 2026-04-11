@@ -15,10 +15,10 @@ export const sessionStatusEnum = pgEnum('session_status', [
 ]);
 
 export const agentTypeEnum = pgEnum('agent_type', [
-  'claude',
-  'codex',
-  'cursor',
-  'raw',
+  'CLAUDE_CODE',
+  'CODEX',
+  'CURSOR',
+  'RAW',
 ]);
 
 export const users = pgTable('users', {
@@ -90,7 +90,7 @@ export const userSettings = pgTable('user_settings', {
   userId: varchar('user_id', { length: 36 })
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
-  defaultAgent: agentTypeEnum('default_agent').notNull().default('claude'),
+  defaultAgent: agentTypeEnum('default_agent').notNull().default('CLAUDE_CODE'),
   includeScreenshots: integer('include_screenshots').notNull().default(1),
   inlineAriaTree: integer('inline_aria_tree').notNull().default(1),
   includeRawDiff: integer('include_raw_diff').notNull().default(0),

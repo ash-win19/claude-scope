@@ -28,7 +28,7 @@ const Settings: React.FC = () => {
             </label>
             <select
               value={settings.defaultAgent}
-              onChange={(e) => settings.setDefaultAgent(e.target.value as 'claude' | 'codex' | 'cursor' | 'raw')}
+              onChange={(e) => settings.setDefaultAgent(e.target.value as 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW')}
               className="h-9 rounded-lg border px-3 text-sm w-full"
               style={{
                 backgroundColor: 'var(--cs-bg-raised)',
@@ -36,10 +36,10 @@ const Settings: React.FC = () => {
                 color: 'var(--cs-text-primary)',
               }}
             >
-              <option value="claude">Claude Code</option>
-              <option value="codex">Codex</option>
-              <option value="cursor">Cursor</option>
-              <option value="raw">Raw</option>
+              <option value="CLAUDE_CODE">Claude Code</option>
+              <option value="CODEX">Codex</option>
+              <option value="CURSOR">Cursor</option>
+              <option value="RAW">Raw</option>
             </select>
           </div>
 

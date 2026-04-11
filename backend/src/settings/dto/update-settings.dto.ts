@@ -2,10 +2,10 @@ import { IsBoolean, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator'
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateSettingsDto {
-  @ApiPropertyOptional({ enum: ['claude', 'codex', 'cursor', 'raw'] })
+  @ApiPropertyOptional({ enum: ['CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW'] })
   @IsOptional()
-  @IsEnum(['claude', 'codex', 'cursor', 'raw'])
-  defaultAgent?: 'claude' | 'codex' | 'cursor' | 'raw';
+  @IsEnum(['CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW'])
+  defaultAgent?: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
 
   @ApiPropertyOptional()
   @IsOptional()

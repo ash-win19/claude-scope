@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface SettingsState {
-  defaultAgent: 'claude' | 'codex' | 'cursor' | 'raw';
+  defaultAgent: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
   includeScreenshots: boolean;
   inlineAriaTree: boolean;
   includeRawDiff: boolean;
@@ -17,7 +17,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      defaultAgent: 'claude',
+      defaultAgent: 'CLAUDE_CODE',
       includeScreenshots: true,
       inlineAriaTree: true,
       includeRawDiff: false,
