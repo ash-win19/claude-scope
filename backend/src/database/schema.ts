@@ -55,6 +55,7 @@ export const sessions = pgTable('sessions', {
   lastError: text('last_error'),
   inspectionJson: jsonb('inspection_json').$type<InspectionResultJson | null>().default(null),
   inspectionDurationMs: integer('inspection_duration_ms'),
+  processingStatus: jsonb('processing_status').$type<ProcessingStatusJson | null>().default(null),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -122,4 +123,22 @@ export interface InspectionResultJson {
     error?: string;
   }>;
   durationMs: number;
+}
+
+export interface LaneStatus {
+  status: 'pending' | 'running' | 'complete' | 'error';
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+  detail?: string;
+}
+
+export interface ProcessingStatusJson {
+  overallStage: 'uploading' | 'extracting' | 'analyzing' | 'synthesizing' | 'persisting' | 'complete' | 'error';
+  visionLane: LaneStatus;
+  playwrightLane: LaneStatus;
+  frameExtraction: LaneStatus;
+  synthesis: LaneStatus;
+  lastUpdated: string;
+  lastError?: string;
 }
