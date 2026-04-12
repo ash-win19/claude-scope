@@ -1,103 +1,71 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import { users, userSettings } from '../database/schema';
-import { SignupDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { AuthResponseDto } from './dto/auth-response.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async signup(dto: SignupDto): Promise<AuthResponseDto> {
-    const existing = await this.db
+  async findOrCreateUser(auth0Sub: string, email?: string) {
+    // Check if user already exists by Auth0 sub (stored as id)
+    const [existing] = await this.db
       .select()
       .from(users)
-      .where(eq(users.email, dto.email))
+      .where(eq(users.id, auth0Sub))
       .limit(1);
 
-    if (existing.length > 0) {
-      throw new ConflictException('Email already registered');
+    if (existing) {
+      return {
+        id: existing.id,
+        name: existing.name,
+        email: existing.email,
+        avatarUrl: existing.avatarUrl,
+      };
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 12);
-    const id = this.generateId();
-
+    // Auto-create user on first Auth0 login
     const [user] = await this.db
       .insert(users)
       .values({
-        id,
-        name: dto.name,
-        email: dto.email,
-        passwordHash,
+        id: auth0Sub,
+        name: email?.split('@')[0] ?? 'User',
+        email: email ?? '',
+        passwordHash: '', // Not used with Auth0
       })
       .returning();
 
-    await this.db.insert(userSettings).values({ userId: id });
-
-    const token = this.signToken(user.id, user.email);
+    // Initialize default settings
+    await this.db.insert(userSettings).values({ userId: auth0Sub });
 
     return {
-      accessToken: token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-      },
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
     };
   }
 
-  async login(dto: LoginDto): Promise<AuthResponseDto> {
-    const [user] = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.email, dto.email))
-      .limit(1);
+  async updateProfile(
+    auth0Sub: string,
+    data: { name?: string; email?: string; avatarUrl?: string },
+  ) {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl;
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const [updated] = await this.db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, auth0Sub))
+      .returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      });
 
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const token = this.signToken(user.id, user.email);
-
-    return {
-      accessToken: token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-      },
-    };
-  }
-
-  private signToken(userId: string, email: string): string {
-    return this.jwtService.sign({ sub: userId, email });
-  }
-
-  private generateId(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'usr_';
-    for (let i = 0; i < 12; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    return updated;
   }
 }

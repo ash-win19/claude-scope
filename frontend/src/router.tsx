@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
+import { useAuth0 } from '@auth0/auth0-react';
 import { CSSkeleton } from '@/components/ui/CSSkeleton';
 
 // Lazy-loaded pages
@@ -25,7 +25,8 @@ const PageSkeleton: React.FC = () => (
 );
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { isAuthenticated, isLoading } = useAuth0();
+  if (isLoading) return <PageSkeleton />;
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 };
