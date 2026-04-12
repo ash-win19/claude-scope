@@ -8,11 +8,36 @@ import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { useCSToast } from '@/components/ui/CSToast';
 import { useSessionStore } from '@/store/sessionStore';
 import { sessions as sessionsApi } from '@/lib/api';
-import type { SessionWithFrames } from '@/lib/api';
+import type { SessionWithFrames, InspectionSummary } from '@/lib/api';
 import { formatDuration, formatTimestamp, formatMsReadable } from '@/lib/utils';
 import { ArrowLeft, Plus, ChevronDown } from 'lucide-react';
 
 const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
+
+const InspectionBrief: React.FC<{ inspection: InspectionSummary | null | undefined }> = ({ inspection }) => {
+  if (!inspection) {
+    return (
+      <p className="text-xs mt-1" style={{ color: 'var(--cs-text-muted)' }}>
+        No inspection data available.
+      </p>
+    );
+  }
+
+  const totalElements = inspection.snapshots.reduce(
+    (sum, s) => sum + (s.success ? (s.counts?.total ?? 0) : 0), 0
+  );
+
+  return (
+    <>
+      <p className="text-sm mt-1" style={{ color: 'var(--cs-text-primary)' }}>
+        {inspection.urlsInspected.length} URL(s), {totalElements} elements
+      </p>
+      <p className="text-xs mt-0.5" style={{ color: 'var(--cs-text-muted)' }}>
+        Playwright lane — ARIA accessibility snapshot
+      </p>
+    </>
+  );
+};
 
 const Output: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +46,7 @@ const Output: React.FC = () => {
   const processingResult = useSessionStore((s) => s.processingResult);
   const [session, setSession] = useState<SessionWithFrames | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inspection, setInspection] = useState<InspectionSummary | null>(null);
 
   useEffect(() => {
     async function loadSession() {
@@ -41,12 +67,14 @@ const Output: React.FC = () => {
           updatedAt: new Date().toISOString(),
           frames: processingResult.frames,
         });
+        setInspection(processingResult.inspection ?? null);
         setLoading(false);
         return;
       }
       try {
         const data = await sessionsApi.get(id!);
         setSession(data);
+        setInspection(data.inspectionJson ?? null);
       } catch {
         navigate('/app');
       } finally {
@@ -89,7 +117,7 @@ const Output: React.FC = () => {
         Your prompt is ready
       </h2>
       <p className="text-sm mb-6" style={{ color: 'var(--cs-text-secondary)' }}>
-        Copy directly into Claude Code, Codex, or any AI coding agent.
+        Built from visual analysis and structural inspection. Copy into any AI coding agent.
       </p>
 
       {/* Agent tabs */}
@@ -129,6 +157,26 @@ const Output: React.FC = () => {
             {opt.label}
           </label>
         ))}
+      </div>
+
+      {/* Pipeline contributions */}
+      <div className="mt-8 mb-4">
+        <CSMonoLabel>PIPELINE CONTRIBUTIONS</CSMonoLabel>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <CSCard padding="compact">
+            <CSMonoLabel>VISUAL TIMELINE</CSMonoLabel>
+            <p className="text-sm mt-1" style={{ color: 'var(--cs-text-primary)' }}>
+              {session?.frameCount ?? 0} frames analyzed
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--cs-text-muted)' }}>
+              Vision lane — per-frame UI element detection
+            </p>
+          </CSCard>
+          <CSCard padding="compact">
+            <CSMonoLabel>STRUCTURAL INSPECTION</CSMonoLabel>
+            <InspectionBrief inspection={inspection} />
+          </CSCard>
+        </div>
       </div>
 
       {/* Action row */}

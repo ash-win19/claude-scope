@@ -96,6 +96,8 @@ export interface Session {
   prompt: string;
   createdAt: string;
   updatedAt: string;
+  inspectionJson?: InspectionSummary | null;
+  inspectionDurationMs?: number | null;
 }
 
 export interface Frame {
@@ -114,6 +116,30 @@ export interface ARIANode {
   name: string;
   children?: ARIANode[];
   diffStatus?: 'added' | 'changed' | 'removed';
+}
+
+// ── Inspection types ──
+export interface ElementCounts {
+  buttons: number;
+  inputs: number;
+  links: number;
+  headings: number;
+  images: number;
+  total: number;
+}
+
+export interface InspectionSnapshot {
+  url: string;
+  counts: ElementCounts;
+  success: boolean;
+  error?: string;
+  ariaTree?: string;  // YAML string from Playwright
+}
+
+export interface InspectionSummary {
+  urlsInspected: string[];
+  snapshots: InspectionSnapshot[];
+  durationMs: number;
 }
 
 export interface SessionWithFrames extends Session {
@@ -189,6 +215,7 @@ export interface ProcessingResponse {
   frameCount: number;
   urlsInspected: string[];
   processingMs: number;
+  inspection?: InspectionSummary;
 }
 
 // ── Auth API ──
