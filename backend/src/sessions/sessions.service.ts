@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
-import { sessions, frames } from '../database/schema';
+import { sessions, frames, sessionAnalysis } from '../database/schema';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 
@@ -62,7 +62,13 @@ export class SessionsService {
       .where(eq(frames.sessionId, sessionId))
       .orderBy(frames.timestamp);
 
-    return { ...session, frames: sessionFrames };
+    const [analysis] = await this.db
+      .select()
+      .from(sessionAnalysis)
+      .where(eq(sessionAnalysis.sessionId, sessionId))
+      .limit(1);
+
+    return { ...session, frames: sessionFrames, analysis: analysis ?? null };
   }
 
   async update(userId: string, sessionId: string, dto: UpdateSessionDto) {
