@@ -100,7 +100,7 @@ export class SessionsService {
     const [result] = await this.db
       .select({
         totalSessions: sql<number>`count(*)::int`,
-        completedSessions: sql<number>`count(*) filter (where ${sessions.status} = 'complete')::int`,
+        completedSessions: sql<number>`count(case when ${sessions.status} = 'complete' then 1 end)::int`,
         totalDuration: sql<number>`coalesce(sum(${sessions.duration}), 0)::int`,
         avgProcessingTime: sql<number>`coalesce(avg(${sessions.processingTime}), 0)::int`,
       })
