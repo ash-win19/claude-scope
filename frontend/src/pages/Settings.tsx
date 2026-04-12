@@ -10,6 +10,16 @@ import { useCSToast } from '@/components/ui/CSToast';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 
+function getUserInitials(name: string | undefined, email: string | undefined): string {
+  if (name?.trim()) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return parts[0][0].toUpperCase();
+  }
+  if (email) return email[0].toUpperCase();
+  return '?';
+}
+
 const Settings: React.FC = () => {
   const settings = useSettingsStore();
   const user = useAuthStore((s) => s.user);
@@ -91,6 +101,36 @@ const Settings: React.FC = () => {
       <section className="mb-10">
         <CSMonoLabel>ACCOUNT</CSMonoLabel>
         <div className="flex flex-col gap-4 mt-4">
+          {/* Profile card */}
+          <div className="flex items-center gap-4">
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name || 'Profile'}
+                className="w-12 h-12 rounded-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold"
+                style={{
+                  backgroundColor: 'var(--cs-accent)',
+                  color: 'var(--cs-on-accent, #fff)',
+                }}
+              >
+                {getUserInitials(user?.name, user?.email)}
+              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium truncate" style={{ color: 'var(--cs-text-primary)' }}>
+                {user?.name || 'Unknown user'}
+              </span>
+              <span className="text-xs truncate" style={{ color: 'var(--cs-text-secondary)' }}>
+                {user?.email || ''}
+              </span>
+            </div>
+          </div>
+
           <CSInput label="Name" value={user?.name || ''} readOnly />
           <CSInput label="Email" value={user?.email || ''} readOnly hint="Managed by Auth0" />
           <div className="flex justify-between">
