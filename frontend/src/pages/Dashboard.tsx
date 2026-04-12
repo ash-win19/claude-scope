@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { CSButton } from '@/components/ui/CSButton';
@@ -8,16 +8,34 @@ import { CSSessionRow } from '@/components/ui/CSSessionRow';
 import { CSEmptyState } from '@/components/ui/CSEmptyState';
 import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { Film, Plus } from 'lucide-react';
-import { MOCK_SESSIONS, formatDuration, formatTimestamp } from '@/lib/mockData';
-
-const stats = [
-  { label: 'TOTAL SESSIONS', value: String(MOCK_SESSIONS.length), trend: '+2 this week' },
-  { label: 'PROMPTS GENERATED', value: String(MOCK_SESSIONS.filter(s => s.status === 'complete').length), trend: '3 this month' },
-  { label: 'AVG. FRAMES / SESSION', value: String(Math.round(MOCK_SESSIONS.reduce((a, s) => a + s.frameCount, 0) / MOCK_SESSIONS.length)), trend: '~7 per session' },
-];
+import { sessions as sessionsApi } from '@/lib/api';
+import type { Session, SessionStats } from '@/lib/api';
+import { formatDuration, formatTimestamp } from '@/lib/utils';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [sessionList, setSessionList] = useState<Session[]>([]);
+  const [stats, setStats] = useState<SessionStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [list, statsData] = await Promise.all([
+          sessionsApi.list(),
+          sessionsApi.stats(),
+        ]);
+        setSessionList(list);
+        setStats(statsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   return (
     <AppShell>
@@ -31,15 +49,24 @@ const Dashboard: React.FC = () => {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
-        {stats.map((stat) => (
-          <CSCard key={stat.label} padding="compact">
-            <CSMonoLabel>{stat.label}</CSMonoLabel>
-            <div className="text-[32px] font-semibold mt-1" style={{ color: 'var(--cs-text-primary)' }}>
-              {stat.value}
-            </div>
-            <div className="text-xs mt-1" style={{ color: 'var(--cs-text-secondary)' }}>{stat.trend}</div>
-          </CSCard>
-        ))}
+        <CSCard padding="compact">
+          <CSMonoLabel>TOTAL SESSIONS</CSMonoLabel>
+          <div className="text-[32px] font-semibold mt-1" style={{ color: 'var(--cs-text-primary)' }}>
+            {loading ? <CSSkeleton width={60} height={32} /> : stats?.totalSessions ?? 0}
+          </div>
+        </CSCard>
+        <CSCard padding="compact">
+          <CSMonoLabel>PROMPTS GENERATED</CSMonoLabel>
+          <div className="text-[32px] font-semibold mt-1" style={{ color: 'var(--cs-text-primary)' }}>
+            {loading ? <CSSkeleton width={60} height={32} /> : stats?.completedSessions ?? 0}
+          </div>
+        </CSCard>
+        <CSCard padding="compact">
+          <CSMonoLabel>AVG PROCESSING</CSMonoLabel>
+          <div className="text-[32px] font-semibold mt-1" style={{ color: 'var(--cs-text-primary)' }}>
+            {loading ? <CSSkeleton width={60} height={32} /> : `${((stats?.avgProcessingTime ?? 0) / 1000).toFixed(1)}s`}
+          </div>
+        </CSCard>
       </div>
 
       {/* Recent sessions */}
@@ -50,7 +77,16 @@ const Dashboard: React.FC = () => {
         </CSButton>
       </div>
 
-      {MOCK_SESSIONS.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col gap-2">
+          {[1, 2, 3].map((i) => <CSSkeleton key={i} height={64} radius={12} />)}
+        </div>
+      ) : error ? (
+        <CSCard padding="default">
+          <p className="text-sm" style={{ color: 'var(--cs-danger)' }}>{error}</p>
+          <CSButton variant="secondary" size="sm" className="mt-2" onClick={() => window.location.reload()}>Retry</CSButton>
+        </CSCard>
+      ) : sessionList.length === 0 ? (
         <CSEmptyState
           icon={Film}
           title="No recordings yet"
@@ -60,7 +96,7 @@ const Dashboard: React.FC = () => {
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {MOCK_SESSIONS.slice(0, 5).map((session) => (
+          {sessionList.slice(0, 5).map((session) => (
             <CSSessionRow
               key={session.id}
               title={session.title}
@@ -68,7 +104,6 @@ const Dashboard: React.FC = () => {
               frameCount={session.frameCount}
               timestamp={formatTimestamp(session.createdAt)}
               status={session.status}
-              thumbnailUrl={session.frames[0]?.thumbnailUrl}
               onClick={() => navigate(`/app/sessions/${session.id}`)}
             />
           ))}

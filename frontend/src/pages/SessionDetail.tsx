@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSCodeBlock } from '@/components/ui/CSCodeBlock';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
-import { CSToggle } from '@/components/ui/CSToggle';
+import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { useCSToast } from '@/components/ui/CSToast';
-import { getMockSession, formatDuration, formatTimestamp } from '@/lib/mockData';
+import { sessions as sessionsApi } from '@/lib/api';
+import type { SessionWithFrames } from '@/lib/api';
+import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { Trash2, RefreshCw } from 'lucide-react';
 
 const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
@@ -16,10 +18,38 @@ const SessionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useCSToast();
-  const session = getMockSession(id || '');
+  const [session, setSession] = useState<SessionWithFrames | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeAgent, setActiveAgent] = useState(0);
   const [editingTitle, setEditingTitle] = useState(false);
-  const [title, setTitle] = useState(session?.title || '');
+  const [title, setTitle] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await sessionsApi.get(id!);
+        setSession(data);
+        setTitle(data.title);
+      } catch {
+        setSession(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="flex flex-col gap-4 py-12">
+          <CSSkeleton width={200} height={28} />
+          <CSSkeleton height={400} radius={12} />
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!session) {
     return (
@@ -49,8 +79,21 @@ const SessionDetail: React.FC = () => {
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            onBlur={() => setEditingTitle(false)}
-            onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
+            onBlur={async () => {
+              setEditingTitle(false);
+              if (title.trim() && title !== session.title) {
+                try {
+                  await sessionsApi.update(id!, { title: title.trim() });
+                } catch {
+                  setTitle(session.title);
+                  showToast('Failed to update title', 'error');
+                }
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+              if (e.key === 'Escape') { setTitle(session.title); setEditingTitle(false); }
+            }}
             className="text-[28px] font-semibold bg-transparent border-b-2 outline-none"
             style={{ color: 'var(--cs-text-primary)', borderColor: 'var(--cs-accent)' }}
           />
@@ -63,7 +106,25 @@ const SessionDetail: React.FC = () => {
             {title}
           </h1>
         )}
-        <CSButton variant="ghost" size="sm" iconLeft={<Trash2 size={14} />} style={{ color: 'var(--cs-danger)' }}>
+        <CSButton
+          variant="ghost"
+          size="sm"
+          iconLeft={<Trash2 size={14} />}
+          style={{ color: 'var(--cs-danger)' }}
+          loading={deleting}
+          onClick={async () => {
+            if (!confirm('Delete this session? This cannot be undone.')) return;
+            setDeleting(true);
+            try {
+              await sessionsApi.delete(id!);
+              showToast('Session deleted', 'success');
+              navigate('/app/sessions');
+            } catch {
+              showToast('Failed to delete session', 'error');
+              setDeleting(false);
+            }
+          }}
+        >
           Delete session
         </CSButton>
       </div>
@@ -100,19 +161,23 @@ const SessionDetail: React.FC = () => {
           {/* Filmstrip */}
           <CSCard padding="compact">
             <CSMonoLabel>FRAMES ({session.frameCount})</CSMonoLabel>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {session.frames.map((frame) => (
-                <div
-                  key={frame.id}
-                  className="w-20 h-14 rounded bg-cover bg-center border cursor-pointer transition-transform duration-150 hover:scale-105"
-                  style={{
-                    backgroundImage: `url(${frame.thumbnailUrl})`,
-                    borderColor: 'var(--cs-border-subtle)',
-                    backgroundColor: 'var(--cs-bg-overlay)',
-                  }}
-                />
-              ))}
-            </div>
+            {session.frames.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {session.frames.map((frame) => (
+                  <div
+                    key={frame.id}
+                    className="w-20 h-14 rounded bg-cover bg-center border cursor-pointer transition-transform duration-150 hover:scale-105"
+                    style={{
+                      backgroundImage: `url(${frame.thumbnailUrl})`,
+                      borderColor: 'var(--cs-border-subtle)',
+                      backgroundColor: 'var(--cs-bg-overlay)',
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs mt-3" style={{ color: 'var(--cs-text-muted)' }}>No frames available.</p>
+            )}
           </CSCard>
 
           {/* Session metadata */}
@@ -137,7 +202,7 @@ const SessionDetail: React.FC = () => {
               </div>
               <div>
                 <span style={{ color: 'var(--cs-text-muted)' }}>Processing</span>
-                <div style={{ color: 'var(--cs-text-primary)' }}>{session.processingTime}s</div>
+                <div style={{ color: 'var(--cs-text-primary)' }}>{(session.processingTime / 1000).toFixed(1)}s</div>
               </div>
             </div>
           </CSCard>
@@ -145,14 +210,22 @@ const SessionDetail: React.FC = () => {
           {/* Component summary */}
           <CSCard padding="compact">
             <CSMonoLabel>COMPONENTS</CSMonoLabel>
-            <p className="text-sm mt-2" style={{ color: 'var(--cs-text-primary)' }}>
-              {session.frames.reduce((a, f) => a + f.diffSummary.added + f.diffSummary.changed + f.diffSummary.removed, 0)} components across {session.frameCount} states
-            </p>
-            <div className="flex gap-3 mt-2 text-xs font-mono">
-              <span style={{ color: 'var(--cs-diff-added)' }}>+{session.frames.reduce((a, f) => a + f.diffSummary.added, 0)} added</span>
-              <span style={{ color: 'var(--cs-diff-changed)' }}>~{session.frames.reduce((a, f) => a + f.diffSummary.changed, 0)} changed</span>
-              <span style={{ color: 'var(--cs-diff-removed)' }}>-{session.frames.reduce((a, f) => a + f.diffSummary.removed, 0)} removed</span>
-            </div>
+            {session.frames.length > 0 && session.frames.some(
+              (f) => f.diffSummary.added > 0 || f.diffSummary.changed > 0 || f.diffSummary.removed > 0
+            ) ? (
+              <>
+                <p className="text-sm mt-2" style={{ color: 'var(--cs-text-primary)' }}>
+                  {session.frames.reduce((a, f) => a + f.diffSummary.added + f.diffSummary.changed + f.diffSummary.removed, 0)} components across {session.frameCount} states
+                </p>
+                <div className="flex gap-3 mt-2 text-xs font-mono">
+                  <span style={{ color: 'var(--cs-diff-added)' }}>+{session.frames.reduce((a, f) => a + f.diffSummary.added, 0)} added</span>
+                  <span style={{ color: 'var(--cs-diff-changed)' }}>~{session.frames.reduce((a, f) => a + f.diffSummary.changed, 0)} changed</span>
+                  <span style={{ color: 'var(--cs-diff-removed)' }}>-{session.frames.reduce((a, f) => a + f.diffSummary.removed, 0)} removed</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs mt-2" style={{ color: 'var(--cs-text-muted)' }}>No component diff data available.</p>
+            )}
           </CSCard>
         </div>
       </div>
