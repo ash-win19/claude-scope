@@ -6,22 +6,83 @@ import { CSCard } from '@/components/ui/CSCard';
 import { CSToggle } from '@/components/ui/CSToggle';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSProgressBar } from '@/components/ui/CSProgressBar';
-import { Globe } from 'lucide-react';
+import { CSInput } from '@/components/ui/CSInput';
+import { useSessionStore } from '@/store/sessionStore';
+import { useSettingsStore } from '@/store/settingsStore';
+
+const AGENT_OPTIONS = ['CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW'] as const;
+type AgentTarget = (typeof AGENT_OPTIONS)[number];
+
+const AGENT_LABELS: Record<AgentTarget, string> = {
+  CLAUDE_CODE: 'Claude Code',
+  CODEX: 'Codex',
+  CURSOR: 'Cursor',
+  RAW: 'Raw',
+};
+
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 const RecordNew: React.FC = () => {
   const navigate = useNavigate();
-  const [tabSelected, setTabSelected] = useState(true);
-  const [micEnabled, setMicEnabled] = useState(false);
+  const { defaultAgent, maxRecordingLength } = useSettingsStore();
+  const setRecordingContext = useSessionStore((s) => s.setRecordingContext);
+
+  const [title, setTitle] = useState('');
+  const [seedUrl, setSeedUrl] = useState('');
+  const [seedUrlError, setSeedUrlError] = useState('');
+  const [agentTarget, setAgentTarget] = useState<AgentTarget>(defaultAgent);
+  const [notes, setNotes] = useState('');
   const [autoStop, setAutoStop] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const maxSeconds = 30 * 60;
+  const maxSeconds = maxRecordingLength * 60;
+
+  const canStart = title.trim().length > 0 && seedUrl.trim().length > 0 && !seedUrlError;
+
+  const handleSeedUrlBlur = () => {
+    const trimmed = seedUrl.trim();
+    if (trimmed.length === 0) {
+      setSeedUrlError('');
+      return;
+    }
+    if (!isValidUrl(trimmed)) {
+      setSeedUrlError('Enter a valid URL starting with http:// or https://');
+    } else {
+      setSeedUrlError('');
+    }
+  };
 
   const startRecording = async () => {
     setError('');
+
+    // Validate
+    if (!title.trim()) {
+      setError('Recording title is required.');
+      return;
+    }
+    if (!isValidUrl(seedUrl.trim())) {
+      setSeedUrlError('Enter a valid URL starting with http:// or https://');
+      return;
+    }
+
+    // Store context
+    setRecordingContext({
+      title: title.trim(),
+      seedUrl: seedUrl.trim(),
+      notes: notes.trim(),
+      agentTarget,
+    });
+
     try {
       // Mock — in real app would call getDisplayMedia
       setIsRecording(true);
@@ -89,33 +150,94 @@ const RecordNew: React.FC = () => {
         Set up your recording
       </h2>
 
-      {/* Tab selector */}
-      <CSCard
-        padding="default"
-        className="mb-6"
-        style={tabSelected ? { borderColor: 'var(--cs-accent-border)' } : {}}
-      >
-        <CSMonoLabel>BROWSER TAB</CSMonoLabel>
-        <div className="flex items-center gap-3 mt-3">
-          <Globe size={16} style={{ color: 'var(--cs-text-muted)' }} />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium" style={{ color: 'var(--cs-text-primary)' }}>Current Tab</div>
-            <div className="text-xs font-mono truncate" style={{ color: 'var(--cs-text-muted)' }}>
-              https://your-app.example.com/dashboard
-            </div>
-          </div>
-          <CSButton variant="ghost" size="sm">Change tab ↓</CSButton>
+      {/* Title */}
+      <div className="mb-4">
+        <CSInput
+          label="Recording title"
+          placeholder="e.g. Checkout flow bug"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* Seed URL */}
+      <div className="mb-4">
+        <CSInput
+          label="App URL to inspect"
+          placeholder="https://your-app.com/page"
+          type="url"
+          value={seedUrl}
+          onChange={(e) => {
+            setSeedUrl(e.target.value);
+            if (seedUrlError) setSeedUrlError('');
+          }}
+          onBlur={handleSeedUrlBlur}
+          error={seedUrlError}
+          required
+        />
+      </div>
+
+      {/* Agent Target */}
+      <div className="mb-4">
+        <CSMonoLabel>AGENT TARGET</CSMonoLabel>
+        <div className="flex gap-2 mt-2">
+          {AGENT_OPTIONS.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setAgentTarget(opt)}
+              className="flex-1 h-9 rounded-lg border text-xs font-medium transition-colors duration-150"
+              style={{
+                backgroundColor: agentTarget === opt ? 'var(--cs-accent)' : 'var(--cs-bg-raised)',
+                borderColor: agentTarget === opt ? 'var(--cs-accent)' : 'var(--cs-border-default)',
+                color: agentTarget === opt ? '#fff' : 'var(--cs-text-primary)',
+              }}
+            >
+              {AGENT_LABELS[opt]}
+            </button>
+          ))}
         </div>
-      </CSCard>
+      </div>
+
+      {/* Notes */}
+      <div className="mb-6">
+        <label
+          htmlFor="recording-notes"
+          className="text-xs font-medium block mb-1.5"
+          style={{ color: 'var(--cs-text-secondary)' }}
+        >
+          Notes (optional)
+        </label>
+        <textarea
+          id="recording-notes"
+          placeholder="Describe what you want the agent to focus on..."
+          value={notes}
+          onChange={(e) => {
+            if (e.target.value.length <= 500) setNotes(e.target.value);
+          }}
+          maxLength={500}
+          rows={3}
+          className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors duration-150 resize-none"
+          style={{
+            backgroundColor: 'var(--cs-bg-raised)',
+            borderColor: 'var(--cs-border-default)',
+            color: 'var(--cs-text-primary)',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--cs-accent)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--cs-border-default)'; }}
+        />
+        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
+          {notes.length}/500
+        </span>
+      </div>
 
       {/* Options */}
       <div className="flex flex-col gap-4 mb-8">
         <div className="flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'var(--cs-text-primary)' }}>Record microphone narration</span>
-          <CSToggle checked={micEnabled} onCheckedChange={setMicEnabled} />
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'var(--cs-text-primary)' }}>Auto-stop at 30 minutes</span>
+          <span className="text-sm" style={{ color: 'var(--cs-text-primary)' }}>
+            Auto-stop at {maxRecordingLength} minutes
+          </span>
           <CSToggle checked={autoStop} onCheckedChange={setAutoStop} />
         </div>
       </div>
@@ -126,7 +248,8 @@ const RecordNew: React.FC = () => {
         size="lg"
         className="w-full"
         onClick={startRecording}
-        style={{ backgroundColor: 'var(--cs-step-record)' }}
+        disabled={!canStart}
+        style={{ backgroundColor: canStart ? 'var(--cs-step-record)' : undefined }}
       >
         ● Start Recording
       </CSButton>
