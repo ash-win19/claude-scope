@@ -33,6 +33,7 @@ const RecordNew: React.FC = () => {
   const navigate = useNavigate();
   const { defaultAgent, maxRecordingLength } = useSettingsStore();
   const setRecordingContext = useSessionStore((s) => s.setRecordingContext);
+  const setRecordingArtifact = useSessionStore((s) => s.setRecordingArtifact);
 
   const [title, setTitle] = useState('');
   const [seedUrl, setSeedUrl] = useState('');
@@ -44,8 +45,12 @@ const RecordNew: React.FC = () => {
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const elapsedRef = useRef(0);
 
-  const maxSeconds = maxRecordingLength * 60;
+  const maxSeconds = 30;
 
   const canStart = title.trim().length > 0 && seedUrl.trim().length > 0 && !seedUrlError;
 
@@ -84,7 +89,43 @@ const RecordNew: React.FC = () => {
     });
 
     try {
-      // Mock — in real app would call getDisplayMedia
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      streamRef.current = stream;
+      chunksRef.current = [];
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm';
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      recorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        setRecordingArtifact({
+          blob,
+          mimeType: mediaRecorder.mimeType,
+          durationMs: elapsedRef.current * 1000,
+        });
+
+        // Stop all tracks
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        recorderRef.current = null;
+        chunksRef.current = [];
+
+        navigate('/app/record/sess_01HX8Y/processing');
+      };
+
+      // Handle user stopping share via browser UI
+      stream.getVideoTracks()[0].onended = () => {
+        stopRecording();
+      };
+
+      mediaRecorder.start(1000);
       setIsRecording(true);
     } catch {
       setError('Screen recording permission was denied. Please allow access and try again.');
@@ -94,23 +135,39 @@ const RecordNew: React.FC = () => {
   const stopRecording = () => {
     setIsRecording(false);
     if (timerRef.current) clearInterval(timerRef.current);
-    navigate('/app/record/sess_01HX8Y/processing');
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      recorderRef.current.stop(); // triggers onstop which navigates
+    }
   };
 
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
         setElapsed((prev) => {
-          if (autoStop && prev >= maxSeconds) {
+          const next = prev + 1;
+          elapsedRef.current = next;
+          if (autoStop && next >= maxSeconds) {
             stopRecording();
             return prev;
           }
-          return prev + 1;
+          return next;
         });
       }, 1000);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isRecording]);
+
+  // Cleanup on unmount: stop tracks and recorder if still active
+  useEffect(() => {
+    return () => {
+      if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+        recorderRef.current.stop();
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      recorderRef.current = null;
+    };
+  }, []);
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -236,7 +293,7 @@ const RecordNew: React.FC = () => {
       <div className="flex flex-col gap-4 mb-8">
         <div className="flex items-center justify-between">
           <span className="text-sm" style={{ color: 'var(--cs-text-primary)' }}>
-            Auto-stop at {maxRecordingLength} minutes
+            Auto-stop at {maxSeconds} seconds
           </span>
           <CSToggle checked={autoStop} onCheckedChange={setAutoStop} />
         </div>
