@@ -2,15 +2,128 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PipelineShell } from '@/components/layout/PipelineShell';
 import { CSButton } from '@/components/ui/CSButton';
+import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSToggle } from '@/components/ui/CSToggle';
 import { useSessionStore } from '@/store/sessionStore';
 import { formatMs } from '@/lib/utils';
 import { sessions as sessionsApi } from '@/lib/api';
-import type { Frame } from '@/lib/api';
+import type { Frame, InspectionSummary } from '@/lib/api';
 import { ARIATree } from '@/components/pipeline/ARIATree';
 import { X } from 'lucide-react';
-import type { ARIANode } from '@/store/sessionStore';
+
+const AriaSnapshotViewer: React.FC<{ yaml: string }> = ({ yaml }) => {
+  const [expanded, setExpanded] = useState(false);
+  const preview = yaml.slice(0, 200);
+  const isTruncated = yaml.length > 200;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="text-xs font-mono flex items-center gap-1"
+        style={{ color: 'var(--cs-text-secondary)' }}
+      >
+        {expanded ? '\u25BE' : '\u25B8'} ARIA Snapshot ({yaml.length} chars)
+      </button>
+      {expanded && (
+        <pre
+          className="mt-1 rounded-lg border p-3 overflow-auto text-[11px] font-mono"
+          style={{
+            backgroundColor: 'var(--cs-bg-raised)',
+            borderColor: 'var(--cs-border-subtle)',
+            color: 'var(--cs-text-secondary)',
+            maxHeight: 300,
+          }}
+        >
+          {yaml}
+        </pre>
+      )}
+      {!expanded && isTruncated && (
+        <pre
+          className="mt-1 rounded-lg border p-2 overflow-hidden text-[11px] font-mono"
+          style={{
+            backgroundColor: 'var(--cs-bg-raised)',
+            borderColor: 'var(--cs-border-subtle)',
+            color: 'var(--cs-text-muted)',
+            maxHeight: 48,
+          }}
+        >
+          {preview}...
+        </pre>
+      )}
+    </div>
+  );
+};
+
+interface InspectionPanelProps {
+  inspection: InspectionSummary | null | undefined;
+  loading: boolean;
+}
+
+const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, loading }) => {
+  if (loading) {
+    return (
+      <div className="mt-6">
+        <CSMonoLabel>STRUCTURAL INSPECTION</CSMonoLabel>
+        <div className="animate-pulse mt-3 h-[120px] rounded-lg" style={{ backgroundColor: 'var(--cs-bg-raised)' }} />
+      </div>
+    );
+  }
+
+  if (!inspection) {
+    return (
+      <div className="mt-6">
+        <CSMonoLabel>STRUCTURAL INSPECTION</CSMonoLabel>
+        <p className="text-xs py-4" style={{ color: 'var(--cs-text-muted)' }}>
+          No inspection data available for this session.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <CSMonoLabel>STRUCTURAL INSPECTION</CSMonoLabel>
+      <CSCard padding="compact" className="mt-3">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-medium" style={{ color: 'var(--cs-text-primary)' }}>
+            {inspection.urlsInspected.length} URL(s) inspected
+          </span>
+          <span className="text-xs font-mono" style={{ color: 'var(--cs-text-muted)' }}>
+            {inspection.durationMs}ms
+          </span>
+        </div>
+
+        {inspection.snapshots.map((snap, i) => (
+          <div key={i} className="mb-4">
+            <div className="text-xs font-mono mb-1" style={{ color: 'var(--cs-accent)' }}>
+              {snap.url}
+            </div>
+
+            {!snap.success ? (
+              <p className="text-xs" style={{ color: 'var(--cs-danger)' }}>
+                Inspection failed: {snap.error}
+              </p>
+            ) : (
+              <>
+                <div className="flex gap-3 flex-wrap text-xs font-mono" style={{ color: 'var(--cs-text-secondary)' }}>
+                  <span>Buttons: {snap.counts?.buttons ?? 0}</span>
+                  <span>Inputs: {snap.counts?.inputs ?? 0}</span>
+                  <span>Links: {snap.counts?.links ?? 0}</span>
+                  <span>Headings: {snap.counts?.headings ?? 0}</span>
+                  <span>Total: {snap.counts?.total ?? 0}</span>
+                </div>
+
+                {snap.ariaTree && <AriaSnapshotViewer yaml={snap.ariaTree} />}
+              </>
+            )}
+          </div>
+        ))}
+      </CSCard>
+    </div>
+  );
+};
 
 const FrameReview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,12 +133,14 @@ const FrameReview: React.FC = () => {
   const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
   const [frames, setFrames] = useState<Frame[]>([]);
   const [diffView, setDiffView] = useState(false);
+  const [inspection, setInspection] = useState<InspectionSummary | null>(null);
 
   useEffect(() => {
     async function loadSession() {
       // Try in-memory processing result first (just came from Processing page)
       if (processingResult && processingResult.sessionId === id) {
         setFrames(processingResult.frames ?? []);
+        setInspection(processingResult.inspection ?? null);
         setLoading(false);
         return;
       }
@@ -34,6 +149,7 @@ const FrameReview: React.FC = () => {
       try {
         const data = await sessionsApi.get(id!);
         setFrames(data.frames);
+        setInspection(data.inspectionJson ?? null);
       } catch {
         navigate('/app');
       } finally {
@@ -145,6 +261,8 @@ const FrameReview: React.FC = () => {
               </CSButton>
             </div>
           )}
+
+          <InspectionPanel inspection={inspection} loading={loading} />
         </div>
 
         {/* Right panel — 40% */}
