@@ -135,3 +135,9 @@
 .animate-cs-spin {
   animation: cs-spin 600ms linear infinite;
 }
+
+/* Sidebar responsive margin */
+@media (min-width: 768px) {
+  .workspace-main-expanded { margin-left: 224px; }
+  .workspace-main-collapsed { margin-left: 64px; }
+}
