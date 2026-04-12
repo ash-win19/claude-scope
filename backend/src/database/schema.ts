@@ -53,6 +53,8 @@ export const sessions = pgTable('sessions', {
   seedUrl: text('seed_url').notNull().default(''),
   notes: text('notes'),
   lastError: text('last_error'),
+  inspectionJson: jsonb('inspection_json').$type<InspectionResultJson | null>().default(null),
+  inspectionDurationMs: integer('inspection_duration_ms'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -109,3 +111,15 @@ export const userSettings = pgTable('user_settings', {
     .defaultNow()
     .notNull(),
 });
+
+export interface InspectionResultJson {
+  urlsInspected: string[];
+  snapshots: Array<{
+    url: string;
+    ariaTree: string;
+    counts: { buttons: number; inputs: number; links: number; headings: number; images: number; total: number };
+    success: boolean;
+    error?: string;
+  }>;
+  durationMs: number;
+}
