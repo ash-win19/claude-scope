@@ -19,7 +19,7 @@ const Landing: React.FC = () => {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
 
       {/* ── Navigation ── */}
-      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md border-b" style={{ borderColor: 'var(--cs-border-subtle)', backgroundColor: 'rgba(18, 18, 18, 0.85)' }}>
+      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md border-b" style={{ borderColor: 'var(--cs-border-subtle)', backgroundColor: 'rgba(8, 8, 16, 0.85)' }}>
         <div className="mx-auto flex items-center justify-between h-14 px-6" style={{ maxWidth: 1080 }}>
           <Link to="/" className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--cs-accent)' }} />

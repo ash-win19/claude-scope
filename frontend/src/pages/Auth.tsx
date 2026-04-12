@@ -28,7 +28,7 @@ const Auth: React.FC = () => {
           <button
             onClick={() => { redirected.current = false; loginWithRedirect(); }}
             className="mt-4 px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ backgroundColor: 'var(--cs-accent)', color: 'var(--cs-on-accent)' }}
+            style={{ backgroundColor: 'var(--cs-accent)', color: 'white' }}
           >
             Try again
           </button>

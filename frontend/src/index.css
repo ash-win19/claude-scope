@@ -4,38 +4,27 @@
 
 @layer base {
   :root {
-    /* ── Surfaces (dark mode — neutral charcoal) ── */
-    --cs-bg-base:        #121212;
-    --cs-bg-surface:     #1E1E1E;
-    --cs-bg-raised:      #2A2A2A;
-    --cs-bg-overlay:     #3C3C3C;
+    /* ── Surfaces ── */
+    --cs-bg-base:        #080810;
+    --cs-bg-surface:     #0F0F1A;
+    --cs-bg-raised:      #161625;
+    --cs-bg-overlay:     #1E1E30;
 
     /* ── Borders ── */
-    --cs-border-subtle:  rgba(255, 255, 255, 0.08);
-    --cs-border-default: rgba(255, 255, 255, 0.14);
-    --cs-border-strong:  rgba(255, 255, 255, 0.24);
+    --cs-border-subtle:  rgba(255, 255, 255, 0.06);
+    --cs-border-default: rgba(255, 255, 255, 0.12);
+    --cs-border-strong:  rgba(255, 255, 255, 0.22);
 
     /* ── Text ── */
-    --cs-text-primary:   #F1F1F1;
-    --cs-text-secondary: #A0A0A0;
-    --cs-text-muted:     #666666;
+    --cs-text-primary:   #F0F0F8;
+    --cs-text-secondary: #8888A0;
+    --cs-text-muted:     #444458;
 
-    /* ── Brand — primary orange ── */
-    --cs-accent:         #FF8A00;
-    --cs-accent-hover:   #FFB84D;
-    --cs-accent-muted:   rgba(255, 138, 0, 0.15);
-    --cs-accent-border:  rgba(255, 138, 0, 0.35);
-    --cs-accent-deep:    #D85A00;
-    --cs-accent-soft:    #F56C00;
-    --cs-on-accent:      #FFFFFF;
-
-    /* ── Brand — teal secondary ── */
-    --cs-teal:           #00C4B4;
-    --cs-teal-hover:     #00E0CE;
-    --cs-teal-muted:     rgba(0, 196, 180, 0.15);
-
-    /* ── Neutral ── */
-    --cs-neutral:        #4A4A4A;
+    /* ── Brand ── */
+    --cs-accent:         #7B6EF6;
+    --cs-accent-hover:   #9388F8;
+    --cs-accent-muted:   rgba(123, 110, 246, 0.15);
+    --cs-accent-border:  rgba(123, 110, 246, 0.35);
 
     /* ── Semantic ── */
     --cs-success:        #4ADE80;
@@ -50,13 +39,14 @@
     /* ── Pipeline step accent colors ── */
     --cs-step-record:    #F87171;
     --cs-step-process:   #FBBF24;
-    --cs-step-review:    #00C4B4;
+    --cs-step-review:    #60A5FA;
     --cs-step-output:    #4ADE80;
 
     /* ── DOM diff colors ── */
     --cs-diff-added:     #4ADE80;
     --cs-diff-removed:   #F87171;
     --cs-diff-changed:   #FBBF24;
+
   }
 
   html {
