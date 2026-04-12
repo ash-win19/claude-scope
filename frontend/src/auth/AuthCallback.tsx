@@ -17,8 +17,13 @@ export const AuthCallback: React.FC<{ children: React.ReactNode }> = ({ children
     (async () => {
       const token = await getAccessTokenSilently();
 
-      // Call backend /auth/me to find or create the user
-      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      const profileParams = new URLSearchParams();
+      if (user.name) profileParams.set('name', user.name);
+      if (user.email) profileParams.set('email', user.email);
+      if (user.picture) profileParams.set('avatarUrl', user.picture);
+      const qs = profileParams.toString();
+
+      const res = await fetch(`${API_BASE_URL}/auth/me${qs ? `?${qs}` : ''}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const backendUser = await res.json();
@@ -26,8 +31,8 @@ export const AuthCallback: React.FC<{ children: React.ReactNode }> = ({ children
       setAuth(
         {
           id: backendUser.id,
-          name: backendUser.name || user.name || '',
-          email: backendUser.email || user.email || '',
+          name: user.name || backendUser.name || '',
+          email: user.email || backendUser.email || '',
           avatarUrl: user.picture,
         },
         token,

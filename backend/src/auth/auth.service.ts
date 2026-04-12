@@ -7,8 +7,10 @@ import { users, userSettings } from '../database/schema';
 export class AuthService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async findOrCreateUser(auth0Sub: string, email?: string) {
-    // Check if user already exists by Auth0 sub (stored as id)
+  async findOrCreateUser(
+    auth0Sub: string,
+    profile?: { name?: string; email?: string; avatarUrl?: string },
+  ) {
     const [existing] = await this.db
       .select()
       .from(users)
@@ -16,6 +18,29 @@ export class AuthService {
       .limit(1);
 
     if (existing) {
+      const updates: Record<string, unknown> = {};
+      if (profile?.name && profile.name !== existing.name)
+        updates.name = profile.name;
+      if (profile?.email && profile.email !== existing.email)
+        updates.email = profile.email;
+      if (profile?.avatarUrl && profile.avatarUrl !== existing.avatarUrl)
+        updates.avatarUrl = profile.avatarUrl;
+
+      if (Object.keys(updates).length > 0) {
+        updates.updatedAt = new Date();
+        const [updated] = await this.db
+          .update(users)
+          .set(updates)
+          .where(eq(users.id, auth0Sub))
+          .returning();
+        return {
+          id: updated.id,
+          name: updated.name,
+          email: updated.email,
+          avatarUrl: updated.avatarUrl,
+        };
+      }
+
       return {
         id: existing.id,
         name: existing.name,
@@ -24,18 +49,17 @@ export class AuthService {
       };
     }
 
-    // Auto-create user on first Auth0 login
     const [user] = await this.db
       .insert(users)
       .values({
         id: auth0Sub,
-        name: email?.split('@')[0] ?? 'User',
-        email: email ?? '',
-        passwordHash: '', // Not used with Auth0
+        name: profile?.name || profile?.email?.split('@')[0] || 'User',
+        email: profile?.email ?? '',
+        avatarUrl: profile?.avatarUrl ?? null,
+        passwordHash: '',
       })
       .returning();
 
-    // Initialize default settings
     await this.db.insert(userSettings).values({ userId: auth0Sub });
 
     return {
