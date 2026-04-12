@@ -109,6 +109,8 @@ const RecordNew: React.FC = () => {
         recorderRef.current = null;
         chunksRef.current = [];
 
+        // Best-effort: try to bring this tab back to focus
+        window.focus();
         navigate(`/workspace/record/${captureId}/processing`);
       };
 
