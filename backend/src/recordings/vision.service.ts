@@ -98,18 +98,29 @@ export class VisionService {
       const rawText = textBlock && 'text' in textBlock ? textBlock.text : '';
 
       try {
-        const parsed: VisionAnalysisResponse = JSON.parse(rawText);
+        // Extract JSON from response — Claude may wrap it in markdown code blocks or add surrounding text
+        const start = rawText.indexOf('{');
+        const end = rawText.lastIndexOf('}');
+        if (start < 0 || end <= start) {
+          throw new Error('No JSON object found in response');
+        }
+        const jsonStr = rawText.substring(start, end + 1);
+        const parsed: VisionAnalysisResponse = JSON.parse(jsonStr);
+        const elements = Array.isArray(parsed.elements) ? parsed.elements : [];
+        if (elements.length === 0) {
+          this.logger.warn(`Frame ${frame.frameId}: parsed JSON has no elements`);
+        }
         return {
           frameId: frame.frameId,
           timestampMs: frame.timestampMs,
           description: parsed.description || '',
-          elements: parsed.elements || [],
+          elements,
           observations: parsed.observations || [],
           success: true,
         };
-      } catch {
+      } catch (parseErr) {
         this.logger.warn(
-          `Failed to parse JSON response for frame ${frame.frameId}, using raw text`,
+          `Failed to parse JSON for frame ${frame.frameId}: ${parseErr instanceof Error ? parseErr.message : parseErr}. Raw: ${rawText.substring(0, 200)}`,
         );
         return {
           frameId: frame.frameId,
