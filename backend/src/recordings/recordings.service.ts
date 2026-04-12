@@ -178,6 +178,8 @@ export class RecordingsService {
         duration: Math.round(timeline.durationMs / 1000),
         seedUrl: dto.seedUrl,
         notes: dto.notes ?? null,
+        inspectionJson: inspectionResult,
+        inspectionDurationMs: inspectionResult.durationMs,
         updatedAt: new Date(),
       }).where(eq(sessions.id, sessionId));
 
