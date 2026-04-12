@@ -67,7 +67,7 @@ export const WorkspaceSidebar: React.FC = () => {
         <NavItem to="/workspace/record/new" icon={<CircleDot size={16} />} label="New Recording" active={isActive('/workspace/record')} collapsed={isCollapsed} onClick={closeMobile} />
         <div className="h-px my-3" style={{ backgroundColor: 'var(--cs-border-subtle)' }} />
         <NavItem to="/workspace/integrations" icon={<Plug size={16} />} label="Integrations" active={isActive('/workspace/integrations')} collapsed={isCollapsed} badge="Soon" onClick={closeMobile} />
-        <NavItem to="/workspace/model-access" icon={<Key size={16} />} label="Model Access" active={isActive('/workspace/model-access')} collapsed={isCollapsed} badge="Soon" onClick={closeMobile} />
+        <NavItem to="/workspace/model-access" icon={<Key size={16} />} label="Model Access" active={isActive('/workspace/model-access')} collapsed={isCollapsed} onClick={closeMobile} />
       </nav>
 
       <div className="px-2 py-3 border-t flex flex-col gap-1" style={{ borderColor: 'var(--cs-border-subtle)' }}>
