@@ -6,6 +6,8 @@ import { CSButton } from '@/components/ui/CSButton';
 import { CSProgressBar } from '@/components/ui/CSProgressBar';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { Film, Search, Zap, Check, ChevronDown } from 'lucide-react';
+import { useSessionStore } from '@/store/sessionStore';
+import { loadRecordingBlob } from '@/lib/recordingStorage';
 
 interface Stage {
   icon: React.ReactNode;
@@ -23,6 +25,7 @@ const stages: Stage[] = [
 const Processing: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { recordingArtifact, pipelineStatus, cleanupRecording } = useSessionStore();
   const [activeStage, setActiveStage] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showLog, setShowLog] = useState(false);
@@ -78,6 +81,18 @@ const Processing: React.FC = () => {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [logs]);
+
+  useEffect(() => {
+    if (!recordingArtifact && pipelineStatus === 'captured') {
+      loadRecordingBlob(id ?? '').then((result) => {
+        if (result) {
+          useSessionStore.getState().setRecordingArtifact(result);
+        } else {
+          navigate('/app/record/new');
+        }
+      });
+    }
+  }, []);
 
   return (
     <PipelineShell currentStep={1} maxWidth={580}>
@@ -159,7 +174,10 @@ const Processing: React.FC = () => {
       </div>
 
       <div className="flex justify-center mt-6">
-        <CSButton variant="ghost" size="sm" style={{ color: 'var(--cs-danger)' }} onClick={() => navigate('/app')}>
+        <CSButton variant="ghost" size="sm" style={{ color: 'var(--cs-danger)' }} onClick={() => {
+          cleanupRecording();
+          navigate('/app');
+        }}>
           Cancel and discard →
         </CSButton>
       </div>
