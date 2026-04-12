@@ -34,6 +34,7 @@ const RecordNew: React.FC = () => {
   const { defaultAgent, maxRecordingLength } = useSettingsStore();
   const setRecordingContext = useSessionStore((s) => s.setRecordingContext);
   const setRecordingArtifact = useSessionStore((s) => s.setRecordingArtifact);
+  const cleanupRecording = useSessionStore((s) => s.cleanupRecording);
 
   const [title, setTitle] = useState('');
   const [seedUrl, setSeedUrl] = useState('');
@@ -314,6 +315,20 @@ const RecordNew: React.FC = () => {
       {error && (
         <p className="text-xs mt-3 text-center" style={{ color: 'var(--cs-danger)' }}>{error}</p>
       )}
+
+      <div className="flex justify-center mt-6">
+        <CSButton
+          variant="ghost"
+          size="sm"
+          style={{ color: 'var(--cs-danger)' }}
+          onClick={() => {
+            cleanupRecording();
+            navigate('/app');
+          }}
+        >
+          Cancel and discard
+        </CSButton>
+      </div>
     </PipelineShell>
   );
 };

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { saveRecordingBlob, deleteRecordingBlob } from '@/lib/recordingStorage';
 
 export interface ARIANode {
   role: string;
@@ -53,12 +54,15 @@ interface SessionState {
   setProcessingPercent: (percent: number) => void;
   setRecordingContext: (ctx: SessionState['recordingContext']) => void;
   clearRecordingContext: () => void;
+  pipelineStatus: 'idle' | 'recording' | 'captured' | 'uploading' | 'processing' | 'complete' | 'error';
+  setPipelineStatus: (status: SessionState['pipelineStatus']) => void;
   setRecordingArtifact: (artifact: SessionState['recordingArtifact']) => void;
   clearRecordingArtifact: () => void;
+  cleanupRecording: () => void;
   reset: () => void;
 }
 
-export const useSessionStore = create<SessionState>((set) => ({
+export const useSessionStore = create<SessionState>((set, get) => ({
   isRecording: false,
   elapsedTime: 0,
   activeSessionId: null,
@@ -66,14 +70,35 @@ export const useSessionStore = create<SessionState>((set) => ({
   processingPercent: 0,
   recordingContext: null,
   recordingArtifact: null,
-  startRecording: (sessionId) => set({ isRecording: true, activeSessionId: sessionId, elapsedTime: 0 }),
-  stopRecording: () => set({ isRecording: false }),
+  pipelineStatus: 'idle',
+  startRecording: (sessionId) => set({ isRecording: true, activeSessionId: sessionId, elapsedTime: 0, pipelineStatus: 'recording' }),
+  stopRecording: () => set({ isRecording: false, pipelineStatus: 'captured' }),
   setElapsedTime: (t) => set({ elapsedTime: t }),
   setProcessingStage: (stage) => set({ processingStage: stage }),
   setProcessingPercent: (percent) => set({ processingPercent: percent }),
   setRecordingContext: (ctx) => set({ recordingContext: ctx }),
   clearRecordingContext: () => set({ recordingContext: null }),
-  setRecordingArtifact: (artifact) => set({ recordingArtifact: artifact }),
+  setPipelineStatus: (status) => set({ pipelineStatus: status }),
+  setRecordingArtifact: (artifact) => {
+    set({ recordingArtifact: artifact });
+    if (artifact) {
+      const id = get().activeSessionId || crypto.randomUUID();
+      saveRecordingBlob(id, artifact.blob, { mimeType: artifact.mimeType, durationMs: artifact.durationMs });
+    }
+  },
   clearRecordingArtifact: () => set({ recordingArtifact: null }),
-  reset: () => set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null, recordingArtifact: null }),
+  cleanupRecording: () => {
+    const sessionId = get().activeSessionId;
+    if (sessionId) {
+      deleteRecordingBlob(sessionId);
+    }
+    set({ recordingArtifact: null, recordingContext: null, pipelineStatus: 'idle', activeSessionId: null });
+  },
+  reset: () => {
+    const sessionId = get().activeSessionId;
+    if (sessionId) {
+      deleteRecordingBlob(sessionId);
+    }
+    set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null, recordingArtifact: null, pipelineStatus: 'idle' });
+  },
 }));
