@@ -65,7 +65,10 @@ export class RecordingsService {
       const [visionResults, inspectionResult] = await Promise.all([
         this.vision.analyzeFrames(extractedFrames),
         dto.seedUrl && this.playwright.isAvailable()
-          ? this.playwright.inspectUrls([dto.seedUrl])
+          ? this.playwright.inspectUrls([dto.seedUrl]).catch((err) => {
+              this.logger.warn(`[${sessionId}] Playwright inspection failed (non-fatal): ${err.message}`);
+              return undefined;
+            })
           : Promise.resolve(undefined),
       ]);
 

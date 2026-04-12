@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import ffmpeg from 'fluent-ffmpeg';
+import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ExtractedFrame } from './types/vision.types';
@@ -31,7 +31,11 @@ export class FrameExtractionService {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const duration = await this.getVideoDuration(videoPath);
+    let duration = await this.getVideoDuration(videoPath);
+    if (!duration || !isFinite(duration) || duration <= 0) {
+      this.logger.warn(`Could not determine video duration, defaulting to 1fps extraction`);
+      duration = 0;
+    }
     this.logger.log(`Video duration: ${duration}s`);
 
     const fps = duration <= 30 ? 1 : maxFrames / duration;
@@ -85,9 +89,10 @@ export class FrameExtractionService {
           return;
         }
 
-        const duration = metadata?.format?.duration;
-        if (duration === undefined || duration === null) {
-          reject(new Error('Could not determine video duration'));
+        const duration = Number(metadata?.format?.duration);
+        if (!isFinite(duration) || duration <= 0) {
+          this.logger.warn('ffprobe returned no duration metadata, returning 0');
+          resolve(0);
           return;
         }
 

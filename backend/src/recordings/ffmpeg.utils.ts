@@ -1,4 +1,4 @@
-import ffmpeg from 'fluent-ffmpeg';
+import * as ffmpeg from 'fluent-ffmpeg';
 
 /**
  * Verifies that ffmpeg is available on the system.
