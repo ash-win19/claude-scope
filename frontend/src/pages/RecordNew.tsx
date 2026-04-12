@@ -122,7 +122,7 @@ const RecordNew: React.FC = () => {
         recorderRef.current = null;
         chunksRef.current = [];
 
-        navigate(`/app/record/${captureId}/processing`);
+        navigate(`/workspace/record/${captureId}/processing`);
       };
 
       // Handle user stopping share via browser UI
@@ -327,7 +327,7 @@ const RecordNew: React.FC = () => {
           style={{ color: 'var(--cs-danger)' }}
           onClick={() => {
             cleanupRecording();
-            navigate('/app');
+            navigate('/workspace');
           }}
         >
           Cancel and discard

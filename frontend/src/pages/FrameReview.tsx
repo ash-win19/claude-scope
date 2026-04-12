@@ -151,7 +151,7 @@ const FrameReview: React.FC = () => {
         setFrames(data.frames);
         setInspection(data.inspectionJson ?? null);
       } catch {
-        navigate('/app');
+        navigate('/workspace');
       } finally {
         setLoading(false);
       }
@@ -186,7 +186,7 @@ const FrameReview: React.FC = () => {
           variant="primary"
           size="md"
           disabled={frames.length === 0}
-          onClick={() => navigate(`/app/record/${id}/output`)}
+          onClick={() => navigate(`/workspace/record/${id}/output`)}
         >
           Generate Prompt →
         </CSButton>

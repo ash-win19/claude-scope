@@ -11,7 +11,7 @@ export const Auth0ProviderWithNavigate: React.FC<{ children: React.ReactNode }> 
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: window.location.origin + '/app',
+        redirect_uri: window.location.origin + '/workspace',
         ...(audience ? { audience } : {}),
       }}
       cacheLocation="localstorage"

@@ -32,7 +32,7 @@ export const PipelineShell: React.FC<PipelineShellProps> = ({
     if (onExit) {
       onExit();
     } else {
-      navigate('/app');
+      navigate('/workspace');
     }
   };
 

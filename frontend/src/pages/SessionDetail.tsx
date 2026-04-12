@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AppShell } from '@/components/layout/AppShell';
+import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSCodeBlock } from '@/components/ui/CSCodeBlock';
@@ -42,32 +42,32 @@ const SessionDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <AppShell>
+      <WorkspaceShell>
         <div className="flex flex-col gap-4 py-12">
           <CSSkeleton width={200} height={28} />
           <CSSkeleton height={400} radius={12} />
         </div>
-      </AppShell>
+      </WorkspaceShell>
     );
   }
 
   if (!session) {
     return (
-      <AppShell>
+      <WorkspaceShell>
         <div className="flex flex-col items-center justify-center py-20">
           <span className="font-mono text-7xl" style={{ color: 'var(--cs-text-muted)' }}>404</span>
           <p className="mt-4 text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Session not found</p>
-          <CSButton variant="primary" className="mt-6" onClick={() => navigate('/app')}>← Go to Dashboard</CSButton>
+          <CSButton variant="primary" className="mt-6" onClick={() => navigate('/workspace')}>← Go to Dashboard</CSButton>
         </div>
-      </AppShell>
+      </WorkspaceShell>
     );
   }
 
   return (
-    <AppShell>
+    <WorkspaceShell>
       {/* Breadcrumb */}
       <div className="font-mono text-xs mb-4" style={{ color: 'var(--cs-text-muted)' }}>
-        <button onClick={() => navigate('/app/sessions')} className="hover:underline">Sessions</button>
+        <button onClick={() => navigate('/workspace/sessions')} className="hover:underline">Sessions</button>
         <span className="mx-2">/</span>
         <span>{title}</span>
       </div>
@@ -118,7 +118,7 @@ const SessionDetail: React.FC = () => {
             try {
               await sessionsApi.delete(id!);
               showToast('Session deleted', 'success');
-              navigate('/app/sessions');
+              navigate('/workspace/sessions');
             } catch {
               showToast('Failed to delete session', 'error');
               setDeleting(false);
@@ -229,7 +229,7 @@ const SessionDetail: React.FC = () => {
           </CSCard>
         </div>
       </div>
-    </AppShell>
+    </WorkspaceShell>
   );
 };
 

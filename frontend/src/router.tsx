@@ -14,6 +14,8 @@ const RecordNew = lazy(() => import('@/pages/RecordNew'));
 const Processing = lazy(() => import('@/pages/Processing'));
 const FrameReview = lazy(() => import('@/pages/FrameReview'));
 const Output = lazy(() => import('@/pages/Output'));
+const Integrations = lazy(() => import('@/pages/Integrations'));
+const ModelAccess = lazy(() => import('@/pages/ModelAccess'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const PageSkeleton: React.FC = () => (
@@ -48,13 +50,22 @@ const wrapAuth = (Component: React.LazyExoticComponent<React.FC>) => (
 export const router = createBrowserRouter([
   { path: '/', element: wrap(Landing) },
   { path: '/auth', element: wrap(Auth) },
-  { path: '/app', element: wrapAuth(Dashboard) },
-  { path: '/app/sessions', element: wrapAuth(Sessions) },
-  { path: '/app/sessions/:id', element: wrapAuth(SessionDetail) },
-  { path: '/app/settings', element: wrapAuth(Settings) },
-  { path: '/app/record/new', element: wrapAuth(RecordNew) },
-  { path: '/app/record/:id/processing', element: wrapAuth(Processing) },
-  { path: '/app/record/:id/review', element: wrapAuth(FrameReview) },
-  { path: '/app/record/:id/output', element: wrapAuth(Output) },
+
+  // Workspace routes (authenticated)
+  { path: '/workspace', element: wrapAuth(Dashboard) },
+  { path: '/workspace/sessions', element: wrapAuth(Sessions) },
+  { path: '/workspace/sessions/:id', element: wrapAuth(SessionDetail) },
+  { path: '/workspace/settings', element: wrapAuth(Settings) },
+  { path: '/workspace/record/new', element: wrapAuth(RecordNew) },
+  { path: '/workspace/record/:id/processing', element: wrapAuth(Processing) },
+  { path: '/workspace/record/:id/review', element: wrapAuth(FrameReview) },
+  { path: '/workspace/record/:id/output', element: wrapAuth(Output) },
+  { path: '/workspace/integrations', element: wrapAuth(Integrations) },
+  { path: '/workspace/model-access', element: wrapAuth(ModelAccess) },
+
+  // Legacy /app redirects
+  { path: '/app', element: <Navigate to="/workspace" replace /> },
+  { path: '/app/*', element: <Navigate to="/workspace" replace /> },
+
   { path: '*', element: wrap(NotFound) },
 ]);
