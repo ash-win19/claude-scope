@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PipelineShell } from '@/components/layout/PipelineShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSToggle } from '@/components/ui/CSToggle';
-import { getMockSession } from '@/lib/mockData';
+import { useSessionStore } from '@/store/sessionStore';
+import { sessions as sessionsApi } from '@/lib/api';
+import type { Frame } from '@/lib/api';
 import { ARIATree } from '@/components/pipeline/ARIATree';
 import { X } from 'lucide-react';
 import type { ARIANode } from '@/store/sessionStore';
@@ -12,10 +14,33 @@ import type { ARIANode } from '@/store/sessionStore';
 const FrameReview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const session = getMockSession(id || 'sess_01HX8Y');
+  const processingResult = useSessionStore((s) => s.processingResult);
+  const [loading, setLoading] = useState(true);
   const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
-  const [frames, setFrames] = useState(session?.frames || []);
+  const [frames, setFrames] = useState<Frame[]>([]);
   const [diffView, setDiffView] = useState(false);
+
+  useEffect(() => {
+    async function loadSession() {
+      // Try in-memory processing result first (just came from Processing page)
+      if (processingResult && processingResult.sessionId === id) {
+        setFrames(processingResult.frames ?? []);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback: fetch from API (page refresh scenario)
+      try {
+        const data = await sessionsApi.get(id!);
+        setFrames(data.frames);
+      } catch {
+        navigate('/app');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSession();
+  }, [id]);
 
   const selectedFrame = frames[selectedFrameIndex];
 
@@ -26,6 +51,14 @@ const FrameReview: React.FC = () => {
       setSelectedFrameIndex(Math.max(0, next.length - 1));
     }
   };
+
+  if (loading) {
+    return (
+      <PipelineShell currentStep={2} maxWidth={1100}>
+        <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Loading session data...</p>
+      </PipelineShell>
+    );
+  }
 
   return (
     <PipelineShell

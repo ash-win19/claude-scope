@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PipelineShell } from '@/components/layout/PipelineShell';
 import { CSButton } from '@/components/ui/CSButton';
@@ -6,7 +6,10 @@ import { CSCard } from '@/components/ui/CSCard';
 import { CSCodeBlock } from '@/components/ui/CSCodeBlock';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { useCSToast } from '@/components/ui/CSToast';
-import { getMockSession, formatDuration, formatTimestamp } from '@/lib/mockData';
+import { useSessionStore } from '@/store/sessionStore';
+import { sessions as sessionsApi } from '@/lib/api';
+import type { SessionWithFrames } from '@/lib/api';
+import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { ArrowLeft, Plus, ChevronDown } from 'lucide-react';
 
 const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
@@ -15,7 +18,44 @@ const Output: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useCSToast();
-  const session = getMockSession(id || 'sess_01HX8Y');
+  const processingResult = useSessionStore((s) => s.processingResult);
+  const [session, setSession] = useState<SessionWithFrames | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSession() {
+      if (processingResult && processingResult.sessionId === id) {
+        setSession({
+          id: processingResult.sessionId,
+          userId: '',
+          title: processingResult.title,
+          status: processingResult.status as 'complete',
+          duration: 0,
+          frameCount: processingResult.frameCount,
+          urls: processingResult.urlsInspected,
+          urlCount: processingResult.urlsInspected.length,
+          agentTarget: processingResult.agentTarget as 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW',
+          processingTime: processingResult.processingMs,
+          prompt: processingResult.prompt,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          frames: processingResult.frames,
+        });
+        setLoading(false);
+        return;
+      }
+      try {
+        const data = await sessionsApi.get(id!);
+        setSession(data);
+      } catch {
+        navigate('/app');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSession();
+  }, [id]);
+
   const [activeAgent, setActiveAgent] = useState(0);
   const [includeScreenshots, setIncludeScreenshots] = useState(true);
   const [inlineAria, setInlineAria] = useState(true);
@@ -26,6 +66,14 @@ const Output: React.FC = () => {
     showToast('Session saved ✓', 'success');
     navigate(`/app/sessions/${id}`);
   };
+
+  if (loading) {
+    return (
+      <PipelineShell currentStep={3} maxWidth={900}>
+        <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Loading session data...</p>
+      </PipelineShell>
+    );
+  }
 
   return (
     <PipelineShell
