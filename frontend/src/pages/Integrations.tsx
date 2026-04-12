@@ -1,5 +1,6 @@
 import React from 'react';
 import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSBadge } from '@/components/ui/CSBadge';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
@@ -13,10 +14,7 @@ const integrations = [
 
 const Integrations: React.FC = () => (
   <WorkspaceShell maxWidth={640}>
-    <h1 className="text-[28px] font-semibold mb-2" style={{ color: 'var(--cs-text-primary)' }}>Integrations</h1>
-    <p className="text-sm mb-8" style={{ color: 'var(--cs-text-secondary)' }}>
-      Connect Claude Scope to your development workflow.
-    </p>
+    <PageHeader title="Integrations" subtitle="Connect Claude Scope to your development workflow." />
 
     <div className="flex flex-col gap-3">
       {integrations.map((item) => (
