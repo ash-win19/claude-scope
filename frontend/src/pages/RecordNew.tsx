@@ -2,24 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PipelineShell } from '@/components/layout/PipelineShell';
 import { CSButton } from '@/components/ui/CSButton';
-import { CSCard } from '@/components/ui/CSCard';
 import { CSToggle } from '@/components/ui/CSToggle';
-import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSProgressBar } from '@/components/ui/CSProgressBar';
 import { CSInput } from '@/components/ui/CSInput';
 import { useSessionStore } from '@/store/sessionStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
-
-const AGENT_OPTIONS = ['CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW'] as const;
-type AgentTarget = (typeof AGENT_OPTIONS)[number];
-
-const AGENT_LABELS: Record<AgentTarget, string> = {
-  CLAUDE_CODE: 'Claude Code',
-  CODEX: 'Codex',
-  CURSOR: 'Cursor',
-  RAW: 'Raw',
-};
 
 function isValidUrl(value: string): boolean {
   try {
@@ -32,7 +19,6 @@ function isValidUrl(value: string): boolean {
 
 const RecordNew: React.FC = () => {
   const navigate = useNavigate();
-  const { defaultAgent, maxRecordingLength } = useSettingsStore();
   const setRecordingContext = useSessionStore((s) => s.setRecordingContext);
   const setRecordingArtifact = useSessionStore((s) => s.setRecordingArtifact);
   const cleanupRecording = useSessionStore((s) => s.cleanupRecording);
@@ -42,7 +28,6 @@ const RecordNew: React.FC = () => {
   const [title, setTitle] = useState('');
   const [seedUrl, setSeedUrl] = useState('');
   const [seedUrlError, setSeedUrlError] = useState('');
-  const [agentTarget, setAgentTarget] = useState<AgentTarget>(defaultAgent);
   const [notes, setNotes] = useState('');
   const [autoStop, setAutoStop] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
@@ -89,7 +74,7 @@ const RecordNew: React.FC = () => {
       title: title.trim(),
       seedUrl: seedUrl.trim(),
       notes: notes.trim(),
-      agentTarget,
+      agentTarget: 'CLAUDE_CODE',
     });
 
     // Set captureId as active session for IndexedDB
@@ -186,24 +171,30 @@ const RecordNew: React.FC = () => {
   if (isRecording) {
     return (
       <PipelineShell currentStep={0} maxWidth={640}>
-        <CSCard padding="default" style={{ borderColor: 'var(--cs-step-record)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full animate-cs-pulse" style={{ backgroundColor: 'var(--cs-step-record)' }} />
-              <span className="text-xs font-mono font-medium" style={{ color: 'var(--cs-text-secondary)' }}>REC</span>
-            </div>
-            <span className="font-mono text-[28px] font-medium" style={{ color: 'var(--cs-text-primary)' }}>
-              {formatTime(elapsed)}
-            </span>
-            <CSButton variant="danger" size="md" onClick={stopRecording}>
-              ■ Stop Recording
-            </CSButton>
+        <div className="flex flex-col items-center justify-center py-8">
+          {/* Pulsing record indicator */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-3 h-3 rounded-full animate-cs-pulse" style={{ backgroundColor: 'var(--cs-step-record)' }} />
+            <span className="text-sm font-mono font-medium" style={{ color: 'var(--cs-step-record)' }}>RECORDING</span>
           </div>
-        </CSCard>
-        <CSProgressBar value={(elapsed / maxSeconds) * 100} color="var(--cs-step-record)" className="mt-4" />
-        <p className="text-xs mt-4 text-center" style={{ color: 'var(--cs-text-muted)' }}>
-          Keep recording until you've captured the behavior to describe.
-        </p>
+
+          {/* Large timer */}
+          <span className="font-mono text-[56px] font-semibold leading-none" style={{ color: 'var(--cs-text-primary)' }}>
+            {formatTime(elapsed)}
+          </span>
+
+          {/* Progress bar */}
+          <CSProgressBar value={(elapsed / maxSeconds) * 100} color="var(--cs-step-record)" className="mt-6 w-full" />
+
+          <p className="text-xs mt-4" style={{ color: 'var(--cs-text-muted)' }}>
+            Recording will auto-stop at {maxSeconds} seconds
+          </p>
+
+          {/* Stop button */}
+          <CSButton variant="danger" size="lg" className="mt-8" onClick={stopRecording}>
+            ■ Stop Recording
+          </CSButton>
+        </div>
       </PipelineShell>
     );
   }
@@ -240,28 +231,6 @@ const RecordNew: React.FC = () => {
           error={seedUrlError}
           required
         />
-      </div>
-
-      {/* Agent Target */}
-      <div className="mb-4">
-        <CSMonoLabel>AGENT TARGET</CSMonoLabel>
-        <div className="flex gap-2 mt-2">
-          {AGENT_OPTIONS.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setAgentTarget(opt)}
-              className="flex-1 h-9 rounded-lg border text-xs font-medium transition-colors duration-150"
-              style={{
-                backgroundColor: agentTarget === opt ? 'var(--cs-accent)' : 'var(--cs-bg-raised)',
-                borderColor: agentTarget === opt ? 'var(--cs-accent)' : 'var(--cs-border-default)',
-                color: agentTarget === opt ? '#fff' : 'var(--cs-text-primary)',
-              }}
-            >
-              {AGENT_LABELS[opt]}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Notes */}
