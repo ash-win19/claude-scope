@@ -7,7 +7,7 @@ export interface SynthesisInput {
   agentTarget: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
   title: string;
   notes?: string;
-  inspection?: InspectionResult; // optional — Playwright may not be available
+  inspection: InspectionResult; // required — both lanes must succeed
 }
 
 export interface SynthesisOutput {

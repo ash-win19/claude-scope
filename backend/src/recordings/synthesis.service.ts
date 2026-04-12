@@ -12,32 +12,25 @@ export class SynthesisService {
 
     const sections: string[] = [];
 
-    // Section 1: Header
+    // Section 1: Recording metadata
     sections.push(this.buildHeader(title, seedUrl, agentTarget));
 
-    // Section 2: Recording summary
-    sections.push(this.buildTimelineSummary(timeline));
+    // Section 2: Visual timeline (from vision lane)
+    sections.push(this.buildVisualTimeline(timeline));
 
-    // Section 3: Timeline events
-    if (timeline.events.length > 0) {
-      sections.push(this.buildTimelineEvents(timeline));
-    }
+    // Section 3: Structural inspection (from Playwright lane)
+    sections.push(this.buildStructuralInspection(inspection));
 
-    // Section 4: Inspection data (if available)
-    if (inspection && inspection.snapshots.length > 0) {
-      sections.push(this.buildInspectionSection(inspection));
-    }
-
-    // Section 5: User notes (if provided)
+    // Section 4: User notes (if provided)
     if (notes?.trim()) {
       sections.push(`## Additional Context\n\n${notes.trim()}`);
     }
 
-    // Section 6: Agent-specific instructions
+    // Section 5: Agent-specific instructions
     sections.push(this.buildAgentInstructions(agentTarget));
 
     const prompt = sections.join('\n\n---\n\n');
-    const urlsInspected = inspection?.urlsInspected ?? [];
+    const urlsInspected = inspection.urlsInspected;
     const summary = timeline.summary;
 
     this.logger.log(
@@ -60,46 +53,45 @@ export class SynthesisService {
     ].join('\n');
   }
 
-  private buildTimelineSummary(timeline: RecordingTimeline): string {
+  private buildVisualTimeline(timeline: RecordingTimeline): string {
     const durationSec = (timeline.durationMs / 1000).toFixed(1);
-    return [
-      `## Recording Summary`,
+    const lines = [
+      '## Visual Timeline',
       '',
-      `- **Duration:** ${durationSec}s`,
-      `- **Frames analyzed:** ${timeline.frameCount}`,
-      `- **Events detected:** ${timeline.events.length}`,
-      timeline.failedFrames > 0
-        ? `- **Failed frames:** ${timeline.failedFrames}`
-        : '',
+      `_${timeline.frameCount} frames analyzed over ${durationSec}s. ${timeline.events.length} events detected._`,
       '',
       timeline.summary,
-    ]
-      .filter(Boolean)
-      .join('\n');
-  }
+    ];
 
-  private buildTimelineEvents(timeline: RecordingTimeline): string {
-    const lines = ['## Timeline Events', ''];
-    for (const event of timeline.events) {
-      const timeSec = (event.timestampMs / 1000).toFixed(1);
-      lines.push(`### [${timeSec}s] ${event.type.toUpperCase()}`);
-      lines.push('');
-      lines.push(event.summary);
-      if (event.elements.length > 0) {
-        lines.push('');
-        lines.push('**Key elements:**');
-        for (const el of event.elements.slice(0, 10)) {
-          const state = el.state ? ` (${el.state})` : '';
-          lines.push(`- \`${el.type}\`: ${el.label}${state}`);
+    if (timeline.failedFrames > 0) {
+      lines.push('', `> ${timeline.failedFrames} frame(s) failed vision analysis.`);
+    }
+
+    if (timeline.events.length > 0) {
+      lines.push('', '### Events', '');
+      for (const event of timeline.events) {
+        const timeSec = (event.timestampMs / 1000).toFixed(1);
+        lines.push(`**[${timeSec}s] ${event.type.toUpperCase()}** — ${event.summary}`);
+        if (event.elements.length > 0) {
+          for (const el of event.elements.slice(0, 10)) {
+            const state = el.state ? ` (${el.state})` : '';
+            lines.push(`  - \`${el.type}\`: ${el.label}${state}`);
+          }
         }
       }
-      lines.push('');
     }
+
     return lines.join('\n');
   }
 
-  private buildInspectionSection(inspection: InspectionResult): string {
-    const lines = ['## Component Inspection', ''];
+  private buildStructuralInspection(inspection: InspectionResult): string {
+    const lines = [
+      '## Structural Inspection',
+      '',
+      `_Playwright inspected ${inspection.urlsInspected.length} URL(s) in ${inspection.durationMs}ms._`,
+      '',
+    ];
+
     for (const snap of inspection.snapshots) {
       lines.push(`### ${snap.url}`);
       if (!snap.success) {
@@ -108,24 +100,27 @@ export class SynthesisService {
         continue;
       }
       lines.push('');
-      lines.push(`- Buttons: ${snap.counts.buttons}`);
-      lines.push(`- Inputs: ${snap.counts.inputs}`);
-      lines.push(`- Links: ${snap.counts.links}`);
-      lines.push(`- Headings: ${snap.counts.headings}`);
-      lines.push(`- Images: ${snap.counts.images}`);
-      lines.push(`- Total elements: ${snap.counts.total}`);
+      lines.push(`| Element | Count |`);
+      lines.push(`|---------|-------|`);
+      lines.push(`| Buttons | ${snap.counts.buttons} |`);
+      lines.push(`| Inputs | ${snap.counts.inputs} |`);
+      lines.push(`| Links | ${snap.counts.links} |`);
+      lines.push(`| Headings | ${snap.counts.headings} |`);
+      lines.push(`| Images | ${snap.counts.images} |`);
+      lines.push(`| **Total** | **${snap.counts.total}** |`);
       if (snap.ariaTree) {
         lines.push('');
+        lines.push('**ARIA Snapshot:**');
         lines.push('```yaml');
-        const truncated =
-          snap.ariaTree.length > 2000
-            ? snap.ariaTree.slice(0, 2000) + '\n# ... truncated'
-            : snap.ariaTree;
+        const truncated = snap.ariaTree.length > 3000
+          ? snap.ariaTree.slice(0, 3000) + '\n# ... truncated at 3000 chars'
+          : snap.ariaTree;
         lines.push(truncated);
         lines.push('```');
       }
       lines.push('');
     }
+
     return lines.join('\n');
   }
 
