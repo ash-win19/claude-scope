@@ -37,9 +37,22 @@ const Processing: React.FC = () => {
   const [showLog, setShowLog] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showResumeBanner, setShowResumeBanner] = useState(true);
   const logRef = useRef<HTMLDivElement>(null);
   const uploadAttempted = useRef(false);
   useDocumentTitle('Processing');
+
+  // Best-effort: pull user's attention back to this tab
+  useEffect(() => {
+    window.focus();
+    document.title = '⏳ Processing — Claude Scope';
+    return () => { document.title = 'Processing — Claude Scope'; };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowResumeBanner(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const addLog = (msg: string) => setLogs((prev) => [...prev, msg]);
 
@@ -122,6 +135,18 @@ const Processing: React.FC = () => {
 
   return (
     <PipelineShell currentStep={1} maxWidth={580}>
+      {showResumeBanner && (
+        <div
+          className="mb-4 px-4 py-2 rounded-lg text-center text-xs font-medium transition-opacity duration-500"
+          style={{
+            backgroundColor: 'var(--cs-accent-muted)',
+            color: 'var(--cs-accent)',
+            opacity: showResumeBanner ? 1 : 0,
+          }}
+        >
+          Recording captured — processing has started automatically
+        </div>
+      )}
       <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--cs-text-primary)' }}>
         Analyzing your recording
       </h2>
