@@ -136,6 +136,10 @@
   animation: cs-spin 600ms linear infinite;
 }
 
+.animate-cs-fade-in {
+  animation: cs-fade-in 300ms ease-out;
+}
+
 /* Sidebar responsive margin */
 @media (min-width: 768px) {
   .workspace-main-expanded { margin-left: 224px; }
