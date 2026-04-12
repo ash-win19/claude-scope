@@ -107,12 +107,22 @@ export class RecordingsService {
       const timeline = this.visionTimeline.buildTimeline(visionResults);
 
       // 8b. Create session_analysis record (dual-write)
+      // Truncate large ARIA trees before persisting to avoid oversized query params
+      const truncatedInspection = {
+        ...inspectionResult,
+        snapshots: inspectionResult.snapshots.map(s => ({
+          ...s,
+          ariaTree: s.ariaTree && s.ariaTree.length > 50000
+            ? s.ariaTree.slice(0, 50000) + '\n# ... truncated at 50000 chars'
+            : s.ariaTree,
+        })),
+      };
       const analysisId = this.generateId('sa');
       await this.db.insert(sessionAnalysis).values({
         id: analysisId,
         sessionId,
         timelineJson: timeline,
-        inspectionJson: inspectionResult,
+        inspectionJson: truncatedInspection,
         visionSuccessCount: successCount,
         totalFrames: visionResults.length,
         analysisVersion: 1,
