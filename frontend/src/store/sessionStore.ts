@@ -41,6 +41,11 @@ interface SessionState {
     notes: string;
     agentTarget: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
   } | null;
+  recordingArtifact: {
+    blob: Blob;
+    mimeType: string;
+    durationMs: number;
+  } | null;
   startRecording: (sessionId: string) => void;
   stopRecording: () => void;
   setElapsedTime: (t: number) => void;
@@ -48,6 +53,8 @@ interface SessionState {
   setProcessingPercent: (percent: number) => void;
   setRecordingContext: (ctx: SessionState['recordingContext']) => void;
   clearRecordingContext: () => void;
+  setRecordingArtifact: (artifact: SessionState['recordingArtifact']) => void;
+  clearRecordingArtifact: () => void;
   reset: () => void;
 }
 
@@ -58,6 +65,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   processingStage: 0,
   processingPercent: 0,
   recordingContext: null,
+  recordingArtifact: null,
   startRecording: (sessionId) => set({ isRecording: true, activeSessionId: sessionId, elapsedTime: 0 }),
   stopRecording: () => set({ isRecording: false }),
   setElapsedTime: (t) => set({ elapsedTime: t }),
@@ -65,5 +73,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   setProcessingPercent: (percent) => set({ processingPercent: percent }),
   setRecordingContext: (ctx) => set({ recordingContext: ctx }),
   clearRecordingContext: () => set({ recordingContext: null }),
-  reset: () => set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null }),
+  setRecordingArtifact: (artifact) => set({ recordingArtifact: artifact }),
+  clearRecordingArtifact: () => set({ recordingArtifact: null }),
+  reset: () => set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null, recordingArtifact: null }),
 }));
