@@ -64,7 +64,8 @@ const Output: React.FC = () => {
           urlCount: processingResult.urlsInspected.length,
           agentTarget: processingResult.agentTarget as 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW',
           processingTime: processingResult.processingMs,
-          prompt: processingResult.prompt,
+          prompt: processingResult.prompt ?? '',
+          promptStatus: processingResult.promptStatus,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           frames: processingResult.frames,
@@ -139,7 +140,31 @@ const Output: React.FC = () => {
         ))}
       </div>
 
-      <CSCodeBlock content={session?.prompt || '# No prompt generated'} showLineNumbers copyable />
+      {session?.promptStatus === 'complete' && session?.prompt ? (
+        <CSCodeBlock content={session.prompt} showLineNumbers copyable />
+      ) : session?.promptStatus === 'generating' ? (
+        <div className="py-12 text-center">
+          <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Generating prompt...</p>
+        </div>
+      ) : (
+        <div className="py-12 text-center">
+          <p className="text-sm mb-4" style={{ color: 'var(--cs-text-muted)' }}>
+            {session?.promptStatus === 'error' ? `Generation failed: ${session?.promptError ?? 'Unknown error'}` : 'Prompt has not been generated yet.'}
+          </p>
+          <CSButton variant="primary" size="md" onClick={async () => {
+            try {
+              const result = await sessionsApi.generatePrompt(id!);
+              if (result.promptStatus === 'complete' && result.prompt) {
+                setSession((prev) => prev ? { ...prev, prompt: result.prompt!, promptStatus: 'complete' } : prev);
+              }
+            } catch {
+              // Handle error
+            }
+          }}>
+            {session?.promptStatus === 'error' ? 'Retry Generation' : 'Generate Prompt'}
+          </CSButton>
+        </div>
+      )}
 
       {/* Output options */}
       <div className="flex gap-4 mt-4 flex-wrap">

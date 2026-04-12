@@ -135,6 +135,8 @@ const FrameReview: React.FC = () => {
   const [frames, setFrames] = useState<Frame[]>([]);
   const [diffView, setDiffView] = useState(false);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   useDocumentTitle('Frame Review');
 
   useEffect(() => {
@@ -184,14 +186,37 @@ const FrameReview: React.FC = () => {
       currentStep={2}
       maxWidth={1100}
       rightAction={
-        <CSButton
-          variant="primary"
-          size="md"
-          disabled={frames.length === 0}
-          onClick={() => navigate(`/workspace/record/${id}/output`)}
-        >
-          Generate Prompt →
-        </CSButton>
+        <div>
+          <CSButton
+            variant="primary"
+            size="md"
+            disabled={frames.length === 0 || generating}
+            loading={generating}
+            onClick={async () => {
+              setGenerating(true);
+              setGenerateError(null);
+              try {
+                const result = await sessionsApi.generatePrompt(id!);
+                if (result.promptStatus === 'complete') {
+                  navigate(`/workspace/record/${id}/output`);
+                } else if (result.promptStatus === 'error') {
+                  setGenerateError(result.error ?? 'Prompt generation failed');
+                } else {
+                  setGenerateError('Prompt is still generating. Try again in a moment.');
+                }
+              } catch (err) {
+                setGenerateError(err instanceof Error ? err.message : 'Failed to generate prompt');
+              } finally {
+                setGenerating(false);
+              }
+            }}
+          >
+            {generating ? 'Generating...' : 'Generate Prompt →'}
+          </CSButton>
+          {generateError && (
+            <p className="text-xs mt-2 text-center" style={{ color: 'var(--cs-danger)' }}>{generateError}</p>
+          )}
+        </div>
       }
     >
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

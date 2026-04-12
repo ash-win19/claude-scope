@@ -94,6 +94,8 @@ export interface Session {
   agentTarget: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
   processingTime: number;
   prompt: string;
+  promptStatus?: string;
+  promptError?: string;
   createdAt: string;
   updatedAt: string;
   inspectionJson?: InspectionSummary | null;
@@ -210,12 +212,20 @@ export interface ProcessingResponse {
   agentTarget: string;
   fileSize: number;
   mimeType: string;
-  prompt: string;
+  promptStatus: 'not_started' | 'generating' | 'complete' | 'error';
+  prompt?: string;
   frames: Frame[];
   frameCount: number;
   urlsInspected: string[];
   processingMs: number;
   inspection?: InspectionSummary;
+}
+
+export interface GeneratePromptResponse {
+  sessionId: string;
+  promptStatus: 'generating' | 'complete' | 'error';
+  prompt: string | null;
+  error?: string;
 }
 
 // ── Auth API ──
@@ -259,6 +269,11 @@ export const sessions = {
     }),
 
   stats: () => request<SessionStats>('/sessions/stats'),
+
+  generatePrompt: (id: string) =>
+    request<GeneratePromptResponse>(`/sessions/${id}/generate-prompt`, {
+      method: 'POST',
+    }),
 };
 
 // ── Settings API ──

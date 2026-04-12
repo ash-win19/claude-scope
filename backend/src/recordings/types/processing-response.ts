@@ -33,7 +33,7 @@ export interface ProcessingResponse {
   agentTarget: string;
   fileSize: number;
   mimeType: string;
-  prompt: string;
+  promptStatus: 'not_started' | 'generating' | 'complete' | 'error';
   frames: ProcessedFrame[];
   frameCount: number;
   urlsInspected: string[];

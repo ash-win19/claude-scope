@@ -11,7 +11,6 @@ import { FrameExtractionService } from './frame-extraction.service';
 import { VisionService } from './vision.service';
 import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
-import { SynthesisService } from './synthesis.service';
 
 @Injectable()
 export class RecordingsService {
@@ -23,7 +22,6 @@ export class RecordingsService {
     private readonly vision: VisionService,
     private readonly visionTimeline: VisionTimelineService,
     private readonly playwright: PlaywrightService,
-    private readonly synthesis: SynthesisService,
   ) {}
 
   async processUpload(
@@ -89,18 +87,7 @@ export class RecordingsService {
       this.logger.log(`[${sessionId}] Building timeline...`);
       const timeline = this.visionTimeline.buildTimeline(visionResults);
 
-      // 9. Synthesize prompt
-      this.logger.log(`[${sessionId}] Synthesizing prompt...`);
-      const synthesisResult = this.synthesis.synthesize({
-        timeline,
-        seedUrl: dto.seedUrl,
-        agentTarget: dto.agentTarget ?? 'CLAUDE_CODE',
-        title: dto.title,
-        notes: dto.notes,
-        inspection: inspectionResult,
-      });
-
-      // 10. Persist frames into the frames table
+      // 9. Persist frames into the frames table
       this.logger.log(`[${sessionId}] Persisting ${extractedFrames.length} frames...`);
       const persistedFrames: ProcessedFrame[] = [];
 
@@ -164,17 +151,47 @@ export class RecordingsService {
         });
       }
 
+      // 10. Build merged analysis artifact
+      const analysisPayload = {
+        timeline: {
+          summary: timeline.summary,
+          durationMs: timeline.durationMs,
+          frameCount: timeline.frameCount,
+          failedFrames: timeline.failedFrames,
+          events: timeline.events.map((e) => ({
+            timestampMs: e.timestampMs,
+            frameId: e.frameId,
+            type: e.type,
+            summary: e.summary,
+            elements: e.elements,
+          })),
+        },
+        inspection: {
+          urlsInspected: inspectionResult.urlsInspected,
+          snapshots: inspectionResult.snapshots.map((s) => ({
+            url: s.url,
+            ariaTree: s.ariaTree,
+            counts: s.counts,
+            success: s.success,
+            error: s.error,
+          })),
+          durationMs: inspectionResult.durationMs,
+        },
+        visionSuccessCount: successCount,
+        totalFrames: visionResults.length,
+      };
+
       // 11. Update session row
       const processingMs = Date.now() - startTime;
-      const urlsInspected = synthesisResult.urlsInspected;
 
       await this.db.update(sessions).set({
         status: 'complete',
         frameCount: persistedFrames.length,
-        urlCount: urlsInspected.length,
+        urlCount: inspectionResult.urlsInspected.length,
         processingTime: processingMs,
-        prompt: synthesisResult.prompt,
-        urls: urlsInspected,
+        analysis: analysisPayload,
+        promptStatus: 'not_started',
+        urls: inspectionResult.urlsInspected,
         duration: Math.round(timeline.durationMs / 1000),
         seedUrl: dto.seedUrl,
         notes: dto.notes ?? null,
@@ -194,10 +211,10 @@ export class RecordingsService {
         agentTarget: dto.agentTarget ?? 'CLAUDE_CODE',
         fileSize: file.size,
         mimeType: file.mimetype,
-        prompt: synthesisResult.prompt,
+        promptStatus: 'not_started' as const,
         frames: persistedFrames,
         frameCount: persistedFrames.length,
-        urlsInspected,
+        urlsInspected: inspectionResult.urlsInspected,
         processingMs,
         inspection: {
           urlsInspected: inspectionResult.urlsInspected,

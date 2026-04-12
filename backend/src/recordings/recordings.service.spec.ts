@@ -6,7 +6,6 @@ import { FrameExtractionService } from './frame-extraction.service';
 import { VisionService } from './vision.service';
 import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
-import { SynthesisService } from './synthesis.service';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
@@ -67,15 +66,7 @@ function createMocks() {
     }),
   };
 
-  const mockSynthesis = {
-    synthesize: jest.fn().mockReturnValue({
-      prompt: '# Test Prompt',
-      summary: 'Test summary',
-      urlsInspected: ['https://example.com'],
-    }),
-  };
-
-  return { mockFrameExtraction, mockVision, mockTimeline, mockPlaywright, mockSynthesis };
+  return { mockFrameExtraction, mockVision, mockTimeline, mockPlaywright };
 }
 
 const mockFile = {
@@ -119,7 +110,6 @@ describe('RecordingsService', () => {
         { provide: VisionService, useValue: mocks.mockVision },
         { provide: VisionTimelineService, useValue: mocks.mockTimeline },
         { provide: PlaywrightService, useValue: mocks.mockPlaywright },
-        { provide: SynthesisService, useValue: mocks.mockSynthesis },
       ],
     }).compile();
 
@@ -132,13 +122,8 @@ describe('RecordingsService', () => {
     expect(mocks.mockVision.analyzeFrames).toHaveBeenCalled();
     expect(mocks.mockPlaywright.inspectUrls).toHaveBeenCalledWith([mockDto.seedUrl]);
 
-    // Verify synthesis received both timeline AND inspection (not undefined)
-    const synthesisCall = mocks.mockSynthesis.synthesize.mock.calls[0][0];
-    expect(synthesisCall.timeline).toBeDefined();
-    expect(synthesisCall.inspection).toBeDefined();
-
     expect(result.status).toBe('complete');
-    expect(result.prompt).toBe('# Test Prompt');
+    expect(result.promptStatus).toBe('not_started');
     expect(result.frames).toBeDefined();
     expect(result.inspection).toBeDefined();
     expect(result.processingMs).toBeGreaterThanOrEqual(0);

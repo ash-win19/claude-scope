@@ -62,6 +62,13 @@ export class SessionsController {
     return this.sessionsService.update(id, sessionId, dto);
   }
 
+  @Post(':id/generate-prompt')
+  @ApiOperation({ summary: 'Generate the final prompt for a session' })
+  generatePrompt(@Req() req: Request, @Param('id') sessionId: string) {
+    const { id } = req.user as { id: string };
+    return this.sessionsService.generatePrompt(id, sessionId);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a session' })
   remove(@Req() req: Request, @Param('id') sessionId: string) {
