@@ -209,7 +209,7 @@ const FrameReview: React.FC = () => {
               try {
                 const result = await sessionsApi.generatePrompt(id!);
                 if (result.promptStatus === 'complete') {
-                  navigate(`/workspace/record/${id}/output`);
+                  navigate(`/workspace/record/${id}/prompt`);
                 } else if (result.promptStatus === 'error') {
                   setGenerateError(result.error ?? 'Prompt generation failed');
                 } else {
@@ -338,7 +338,7 @@ const FrameReview: React.FC = () => {
           variant="primary"
           size="lg"
           disabled={frames.length === 0}
-          onClick={() => navigate(`/workspace/record/${id}/output`)}
+          onClick={() => navigate(`/workspace/record/${id}/prompt`)}
         >
           Generate Prompt →
         </CSButton>

@@ -293,6 +293,15 @@ export class RecordingsService {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`[${sessionId}] Processing failed: ${message}`);
+      if (err instanceof Error && err.stack) {
+        this.logger.error(`[${sessionId}] Stack: ${err.stack}`);
+      }
+      if ((err as any)?.cause) {
+        this.logger.error(`[${sessionId}] Cause: ${JSON.stringify((err as any).cause)}`);
+      }
+      if ((err as any)?.detail) {
+        this.logger.error(`[${sessionId}] Detail: ${(err as any).detail}`);
+      }
 
       const processingMs = Date.now() - startTime;
 

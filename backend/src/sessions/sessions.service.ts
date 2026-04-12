@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { eq, and, desc, sql } from 'drizzle-orm';
@@ -14,6 +15,8 @@ import { SynthesisService } from '../recordings/synthesis.service';
 
 @Injectable()
 export class SessionsService {
+  private readonly logger = new Logger(SessionsService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly synthesis: SynthesisService,
@@ -159,6 +162,8 @@ export class SessionsService {
   }
 
   async generatePrompt(userId: string, sessionId: string) {
+    this.logger.log(`[${sessionId}] generatePrompt called by user ${userId}`);
+
     await this.assertOwnership(userId, sessionId);
 
     const [session] = await this.db
@@ -168,13 +173,17 @@ export class SessionsService {
       .limit(1);
 
     if (!session) {
+      this.logger.warn(`[${sessionId}] Session not found`);
       throw new NotFoundException('Session not found');
     }
+
+    this.logger.log(`[${sessionId}] Session status=${session.status}, promptStatus=${session.promptStatus}, hasAnalysis=${!!session.analysis}`);
 
     const analysis = session.analysis as AnalysisJson | null;
 
     // Guard: no analysis data available
     if (!analysis) {
+      this.logger.warn(`[${sessionId}] No analysis data on session`);
       throw new BadRequestException('Session has no analysis data. Upload must complete first.');
     }
 
@@ -242,6 +251,13 @@ export class SessionsService {
       return { sessionId, promptStatus: 'complete', prompt: synthesisResult.prompt };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`[${sessionId}] Prompt generation failed: ${message}`);
+      if (err instanceof Error && err.stack) {
+        this.logger.error(`[${sessionId}] Stack: ${err.stack}`);
+      }
+      if ((err as any)?.cause) {
+        this.logger.error(`[${sessionId}] Cause: ${JSON.stringify((err as any).cause)}`);
+      }
 
       await this.db.update(sessions).set({
         promptStatus: 'error',
