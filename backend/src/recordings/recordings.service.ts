@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
-import { sessions, frames } from '../database/schema';
+import { sessions, frames, type ProcessingStatusJson } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { UploadRecordingDto } from './dto/upload-recording.dto';
 import { ProcessingResponse, ProcessedFrame } from './types/processing-response';
@@ -44,6 +44,7 @@ export class RecordingsService {
       seedUrl: dto.seedUrl,
       notes: dto.notes ?? null,
     });
+    await this.updateStatus(sessionId, this.initialStatus());
 
     // 2. Create temp workspace
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cs-recording-'));
@@ -56,9 +57,16 @@ export class RecordingsService {
       fs.writeFileSync(videoPath, file.buffer);
 
       // 4. Extract frames
+      await this.updateStatus(sessionId, {
+        overallStage: 'extracting',
+        frameExtraction: { status: 'running', startedAt: new Date().toISOString() },
+      });
       this.logger.log(`[${sessionId}] Extracting frames...`);
       const extractedFrames = await this.frameExtraction.extractFrames(videoPath, framesDir);
       this.logger.log(`[${sessionId}] Extracted ${extractedFrames.length} frames`);
+      await this.updateStatus(sessionId, {
+        frameExtraction: { status: 'complete', completedAt: new Date().toISOString(), detail: `${extractedFrames.length} frames` },
+      });
 
       // 5. Validate both lanes are available
       if (!this.playwright.isAvailable()) {
@@ -70,6 +78,11 @@ export class RecordingsService {
       }
 
       // 6. Run vision + playwright in parallel — both required
+      await this.updateStatus(sessionId, {
+        overallStage: 'analyzing',
+        visionLane: { status: 'running', startedAt: new Date().toISOString() },
+        playwrightLane: { status: 'running', startedAt: new Date().toISOString() },
+      });
       this.logger.log(`[${sessionId}] Running vision and playwright lanes in parallel...`);
 
       const [visionResults, inspectionResult] = await Promise.all([
@@ -84,12 +97,20 @@ export class RecordingsService {
       }
 
       this.logger.log(`[${sessionId}] Vision: ${successCount}/${visionResults.length} frames. Playwright: ${inspectionResult.snapshots.length} snapshots.`);
+      await this.updateStatus(sessionId, {
+        visionLane: { status: 'complete', completedAt: new Date().toISOString(), detail: `${successCount}/${visionResults.length} frames` },
+        playwrightLane: { status: 'complete', completedAt: new Date().toISOString(), detail: `${inspectionResult.snapshots.length} snapshots` },
+      });
 
       // 8. Build timeline from vision results
       this.logger.log(`[${sessionId}] Building timeline...`);
       const timeline = this.visionTimeline.buildTimeline(visionResults);
 
       // 9. Synthesize prompt
+      await this.updateStatus(sessionId, {
+        overallStage: 'synthesizing',
+        synthesis: { status: 'running', startedAt: new Date().toISOString() },
+      });
       this.logger.log(`[${sessionId}] Synthesizing prompt...`);
       const synthesisResult = this.synthesis.synthesize({
         timeline,
@@ -98,6 +119,10 @@ export class RecordingsService {
         title: dto.title,
         notes: dto.notes,
         inspection: inspectionResult,
+      });
+      await this.updateStatus(sessionId, {
+        synthesis: { status: 'complete', completedAt: new Date().toISOString() },
+        overallStage: 'persisting',
       });
 
       // 10. Persist frames into the frames table
@@ -184,6 +209,7 @@ export class RecordingsService {
       }).where(eq(sessions.id, sessionId));
 
       this.logger.log(`[${sessionId}] Processing complete in ${processingMs}ms`);
+      await this.updateStatus(sessionId, { overallStage: 'complete' });
 
       // 12. Return full response
       return {
@@ -209,6 +235,14 @@ export class RecordingsService {
           })),
           durationMs: inspectionResult.durationMs,
         },
+        processingStatus: {
+          overallStage: 'complete',
+          visionLane: { status: 'complete' },
+          playwrightLane: { status: 'complete' },
+          frameExtraction: { status: 'complete' },
+          synthesis: { status: 'complete' },
+          lastUpdated: new Date().toISOString(),
+        },
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -222,6 +256,20 @@ export class RecordingsService {
         lastError: message,
         updatedAt: new Date(),
       }).where(eq(sessions.id, sessionId));
+
+      // Attribute error to correct lane
+      const laneError = message.toLowerCase();
+      const errorUpdate: Partial<ProcessingStatusJson> = {
+        overallStage: 'error',
+        lastError: message,
+      };
+      if (laneError.includes('playwright') || laneError.includes('browser')) {
+        errorUpdate.playwrightLane = { status: 'error', error: message };
+      } else if (laneError.includes('vision') || laneError.includes('anthropic') || laneError.includes('frame')) {
+        errorUpdate.visionLane = { status: 'error', error: message };
+      }
+
+      await this.updateStatus(sessionId, errorUpdate);
 
       throw new InternalServerErrorException({
         sessionId,
@@ -237,6 +285,27 @@ export class RecordingsService {
         this.logger.warn(`[${sessionId}] Failed to clean up temp directory: ${tmpDir}`);
       }
     }
+  }
+
+  private async updateStatus(sessionId: string, status: Partial<ProcessingStatusJson>) {
+    const current = await this.db.select({ processingStatus: sessions.processingStatus })
+      .from(sessions).where(eq(sessions.id, sessionId)).limit(1);
+
+    const existing = (current[0]?.processingStatus as ProcessingStatusJson | null) ?? this.initialStatus();
+    const merged = { ...existing, ...status, lastUpdated: new Date().toISOString() };
+
+    await this.db.update(sessions).set({ processingStatus: merged }).where(eq(sessions.id, sessionId));
+  }
+
+  private initialStatus(): ProcessingStatusJson {
+    return {
+      overallStage: 'uploading',
+      visionLane: { status: 'pending' },
+      playwrightLane: { status: 'pending' },
+      frameExtraction: { status: 'pending' },
+      synthesis: { status: 'pending' },
+      lastUpdated: new Date().toISOString(),
+    };
   }
 
   private generateId(prefix: string): string {
