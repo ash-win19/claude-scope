@@ -5,6 +5,7 @@ import { CSButton } from '@/components/ui/CSButton';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSToggle } from '@/components/ui/CSToggle';
 import { useSessionStore } from '@/store/sessionStore';
+import { formatMs } from '@/lib/utils';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Frame } from '@/lib/api';
 import { ARIATree } from '@/components/pipeline/ARIATree';
@@ -130,13 +131,13 @@ const FrameReview: React.FC = () => {
               >
                 <img
                   src={selectedFrame.thumbnailUrl}
-                  alt={`Frame at ${selectedFrame.timestamp}s`}
+                  alt={`Frame at ${formatMs(selectedFrame.timestamp)}`}
                   className="w-full object-contain"
                   style={{ backgroundColor: 'var(--cs-bg-overlay)', maxHeight: 400 }}
                 />
               </div>
               <div className="flex gap-4 mt-2 font-mono text-[11px]" style={{ color: 'var(--cs-text-muted)' }}>
-                <span>Timestamp: {Math.floor(selectedFrame.timestamp / 60)}:{String(Math.floor(selectedFrame.timestamp % 60)).padStart(2, '0')}</span>
+                <span>Timestamp: {formatMs(selectedFrame.timestamp)}</span>
                 <span>URL: {selectedFrame.url}</span>
               </div>
               <CSButton variant="ghost" size="sm" className="mt-2" style={{ color: 'var(--cs-danger)' }} onClick={() => removeFrame(selectedFrame.id)}>
@@ -149,16 +150,22 @@ const FrameReview: React.FC = () => {
         {/* Right panel — 40% */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-2">
-            <CSMonoLabel>COMPONENTS AT {selectedFrame ? `${Math.floor(selectedFrame.timestamp / 60)}:${String(Math.floor(selectedFrame.timestamp % 60)).padStart(2, '0')}` : '--'}</CSMonoLabel>
+            <CSMonoLabel>COMPONENTS AT {selectedFrame ? formatMs(selectedFrame.timestamp) : '--'}</CSMonoLabel>
             <div className="flex items-center gap-2">
               <span className="text-xs" style={{ color: 'var(--cs-text-secondary)' }}>Diff view</span>
-              <CSToggle checked={diffView} onCheckedChange={setDiffView} />
+              <CSToggle checked={diffView} onCheckedChange={setDiffView} disabled={!selectedFrame || selectedFrame.ariaTree.length === 0} />
             </div>
           </div>
           <div className="h-px mb-3" style={{ backgroundColor: 'var(--cs-border-subtle)' }} />
 
           {selectedFrame && (
-            <ARIATree nodes={selectedFrame.ariaTree} diffOnly={diffView} />
+            selectedFrame.ariaTree.length > 0 ? (
+              <ARIATree nodes={selectedFrame.ariaTree} diffOnly={diffView} />
+            ) : (
+              <p className="text-xs py-4 text-center" style={{ color: 'var(--cs-text-muted)' }}>
+                No component data available for this frame.
+              </p>
+            )
           )}
 
           {/* Legend */}

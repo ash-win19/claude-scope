@@ -9,7 +9,7 @@ import { useCSToast } from '@/components/ui/CSToast';
 import { useSessionStore } from '@/store/sessionStore';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { SessionWithFrames } from '@/lib/api';
-import { formatDuration, formatTimestamp } from '@/lib/utils';
+import { formatDuration, formatTimestamp, formatMsReadable } from '@/lib/utils';
 import { ArrowLeft, Plus, ChevronDown } from 'lucide-react';
 
 const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
@@ -30,7 +30,7 @@ const Output: React.FC = () => {
           userId: '',
           title: processingResult.title,
           status: processingResult.status as 'complete',
-          duration: 0,
+          duration: Math.round((processingResult.processingMs ?? 0) / 1000),
           frameCount: processingResult.frameCount,
           urls: processingResult.urlsInspected,
           urlCount: processingResult.urlsInspected.length,
@@ -176,7 +176,7 @@ const Output: React.FC = () => {
               </div>
               <div>
                 <span style={{ color: 'var(--cs-text-muted)' }}>Processing time</span>
-                <div style={{ color: 'var(--cs-text-primary)' }}>{session.processingTime}s</div>
+                <div style={{ color: 'var(--cs-text-primary)' }}>{formatMsReadable(session.processingTime)}</div>
               </div>
               <div>
                 <span style={{ color: 'var(--cs-text-muted)' }}>Created</span>
