@@ -66,6 +66,9 @@ const Sessions: React.FC = () => {
           <CSButton variant="secondary" size="sm" iconLeft={<SlidersHorizontal size={14} />} onClick={() => setShowFilters(!showFilters)}>
             Filter
           </CSButton>
+          <CSButton variant="primary" size="sm" onClick={() => navigate('/workspace/record/new')}>
+            + New
+          </CSButton>
         </div>
       </div>
 
@@ -109,6 +112,12 @@ const Sessions: React.FC = () => {
             }}>Clear filters</CSButton>
           </div>
         </CSCard>
+      )}
+
+      {(search || statusFilter !== 'all' || dateFilter !== 'any') && (
+        <p className="text-xs mb-3" style={{ color: 'var(--cs-text-muted)' }}>
+          {filtered.length} of {sessionList.length} sessions
+        </p>
       )}
 
       {loading ? (
