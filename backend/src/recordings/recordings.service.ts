@@ -60,23 +60,36 @@ export class RecordingsService {
       const extractedFrames = await this.frameExtraction.extractFrames(videoPath, framesDir);
       this.logger.log(`[${sessionId}] Extracted ${extractedFrames.length} frames`);
 
-      // 5. Run vision + playwright in parallel
-      this.logger.log(`[${sessionId}] Running vision analysis and playwright inspection in parallel...`);
+      // 5. Validate both lanes are available
+      if (!this.playwright.isAvailable()) {
+        throw new Error('Playwright browser is not available. Cannot process recording.');
+      }
+
+      if (!this.vision.isAvailable()) {
+        throw new Error('Vision service is not available. Check ANTHROPIC_API_KEY.');
+      }
+
+      // 6. Run vision + playwright in parallel — both required
+      this.logger.log(`[${sessionId}] Running vision and playwright lanes in parallel...`);
+
       const [visionResults, inspectionResult] = await Promise.all([
         this.vision.analyzeFrames(extractedFrames),
-        dto.seedUrl && this.playwright.isAvailable()
-          ? this.playwright.inspectUrls([dto.seedUrl]).catch((err) => {
-              this.logger.warn(`[${sessionId}] Playwright inspection failed (non-fatal): ${err.message}`);
-              return undefined;
-            })
-          : Promise.resolve(undefined),
+        this.playwright.inspectUrls([dto.seedUrl]),
       ]);
 
-      // 6. Build timeline from vision results
+      // 7. Validate vision lane produced results
+      const successCount = visionResults.filter((r) => r.success).length;
+      if (successCount === 0) {
+        throw new Error(`Vision analysis failed for all ${visionResults.length} frames`);
+      }
+
+      this.logger.log(`[${sessionId}] Vision: ${successCount}/${visionResults.length} frames. Playwright: ${inspectionResult.snapshots.length} snapshots.`);
+
+      // 8. Build timeline from vision results
       this.logger.log(`[${sessionId}] Building timeline...`);
       const timeline = this.visionTimeline.buildTimeline(visionResults);
 
-      // 7. Synthesize prompt
+      // 9. Synthesize prompt
       this.logger.log(`[${sessionId}] Synthesizing prompt...`);
       const synthesisResult = this.synthesis.synthesize({
         timeline,
@@ -87,7 +100,7 @@ export class RecordingsService {
         inspection: inspectionResult,
       });
 
-      // 8. Persist frames into the frames table
+      // 10. Persist frames into the frames table
       this.logger.log(`[${sessionId}] Persisting ${extractedFrames.length} frames...`);
       const persistedFrames: ProcessedFrame[] = [];
 
@@ -151,7 +164,7 @@ export class RecordingsService {
         });
       }
 
-      // 9. Update session row
+      // 11. Update session row
       const processingMs = Date.now() - startTime;
       const urlsInspected = synthesisResult.urlsInspected;
 
@@ -170,7 +183,7 @@ export class RecordingsService {
 
       this.logger.log(`[${sessionId}] Processing complete in ${processingMs}ms`);
 
-      // 10. Return full response
+      // 12. Return full response
       return {
         sessionId,
         status: 'complete',
@@ -184,6 +197,16 @@ export class RecordingsService {
         frameCount: persistedFrames.length,
         urlsInspected,
         processingMs,
+        inspection: {
+          urlsInspected: inspectionResult.urlsInspected,
+          snapshots: inspectionResult.snapshots.map((s) => ({
+            url: s.url,
+            counts: s.counts,
+            success: s.success,
+            error: s.error,
+          })),
+          durationMs: inspectionResult.durationMs,
+        },
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -204,7 +227,7 @@ export class RecordingsService {
         processingMs,
       });
     } finally {
-      // 11. Cleanup temp files
+      // 13. Cleanup temp files
       try {
         fs.rmSync(tmpDir, { recursive: true, force: true });
         this.logger.log(`[${sessionId}] Cleaned up temp directory`);

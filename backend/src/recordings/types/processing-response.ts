@@ -14,6 +14,17 @@ export interface ProcessedFrame {
   createdAt: string;
 }
 
+export interface InspectionSummary {
+  urlsInspected: string[];
+  snapshots: Array<{
+    url: string;
+    counts: { buttons: number; inputs: number; links: number; headings: number; images: number; total: number };
+    success: boolean;
+    error?: string;
+  }>;
+  durationMs: number;
+}
+
 export interface ProcessingResponse {
   sessionId: string;
   status: 'complete';
@@ -27,4 +38,5 @@ export interface ProcessingResponse {
   frameCount: number;
   urlsInspected: string[];
   processingMs: number;
+  inspection: InspectionSummary;
 }
