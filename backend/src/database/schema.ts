@@ -6,6 +6,7 @@ import {
   timestamp,
   jsonb,
   pgEnum,
+  index,
 } from 'drizzle-orm/pg-core';
 
 export const sessionStatusEnum = pgEnum('session_status', [
@@ -55,7 +56,9 @@ export const sessions = pgTable('sessions', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
-});
+}, (table) => [
+  index('sessions_user_created_idx').on(table.userId, table.createdAt.desc()),
+]);
 
 export interface ARIANodeJson {
   role: string;
@@ -86,7 +89,9 @@ export const frames = pgTable('frames', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
-});
+}, (table) => [
+  index('frames_session_timestamp_idx').on(table.sessionId, table.timestamp.asc()),
+]);
 
 export const userSettings = pgTable('user_settings', {
   userId: varchar('user_id', { length: 36 })
