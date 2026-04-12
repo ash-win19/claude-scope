@@ -5,10 +5,12 @@ import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { Film, Search, Zap, ChevronDown, Check } from 'lucide-react';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const Landing: React.FC = () => {
   const { loginWithRedirect } = useAuth0();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  useDocumentTitle('');
 
   const handleSignup = () => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } });
   const handleLogin = () => loginWithRedirect();

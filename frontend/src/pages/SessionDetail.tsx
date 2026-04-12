@@ -11,6 +11,7 @@ import { sessions as sessionsApi } from '@/lib/api';
 import type { SessionWithFrames } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { Trash2, RefreshCw } from 'lucide-react';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
 
@@ -24,6 +25,7 @@ const SessionDetail: React.FC = () => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState('');
   const [deleting, setDeleting] = useState(false);
+  useDocumentTitle(session?.title ?? 'Session');
 
   useEffect(() => {
     async function load() {

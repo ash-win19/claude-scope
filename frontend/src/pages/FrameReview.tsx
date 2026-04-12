@@ -11,6 +11,7 @@ import { sessions as sessionsApi } from '@/lib/api';
 import type { Frame, InspectionSummary } from '@/lib/api';
 import { ARIATree } from '@/components/pipeline/ARIATree';
 import { X } from 'lucide-react';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const AriaSnapshotViewer: React.FC<{ yaml: string }> = ({ yaml }) => {
   const [expanded, setExpanded] = useState(false);
@@ -134,6 +135,7 @@ const FrameReview: React.FC = () => {
   const [frames, setFrames] = useState<Frame[]>([]);
   const [diffView, setDiffView] = useState(false);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
+  useDocumentTitle('Frame Review');
 
   useEffect(() => {
     async function loadSession() {
