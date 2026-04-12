@@ -35,11 +35,19 @@ interface SessionState {
   activeSessionId: string | null;
   processingStage: number;
   processingPercent: number;
+  recordingContext: {
+    title: string;
+    seedUrl: string;
+    notes: string;
+    agentTarget: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+  } | null;
   startRecording: (sessionId: string) => void;
   stopRecording: () => void;
   setElapsedTime: (t: number) => void;
   setProcessingStage: (stage: number) => void;
   setProcessingPercent: (percent: number) => void;
+  setRecordingContext: (ctx: SessionState['recordingContext']) => void;
+  clearRecordingContext: () => void;
   reset: () => void;
 }
 
@@ -49,10 +57,13 @@ export const useSessionStore = create<SessionState>((set) => ({
   activeSessionId: null,
   processingStage: 0,
   processingPercent: 0,
+  recordingContext: null,
   startRecording: (sessionId) => set({ isRecording: true, activeSessionId: sessionId, elapsedTime: 0 }),
   stopRecording: () => set({ isRecording: false }),
   setElapsedTime: (t) => set({ elapsedTime: t }),
   setProcessingStage: (stage) => set({ processingStage: stage }),
   setProcessingPercent: (percent) => set({ processingPercent: percent }),
-  reset: () => set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0 }),
+  setRecordingContext: (ctx) => set({ recordingContext: ctx }),
+  clearRecordingContext: () => set({ recordingContext: null }),
+  reset: () => set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null }),
 }));
