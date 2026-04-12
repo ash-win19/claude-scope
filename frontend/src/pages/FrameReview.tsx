@@ -4,6 +4,7 @@ import { PipelineShell } from '@/components/layout/PipelineShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
+import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { useSessionStore } from '@/store/sessionStore';
 import { formatMs } from '@/lib/utils';
 import { sessions as sessionsApi } from '@/lib/api';
@@ -172,7 +173,19 @@ const FrameReview: React.FC = () => {
   if (loading) {
     return (
       <PipelineShell currentStep={2} maxWidth={1100}>
-        <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Loading session data...</p>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3">
+            <CSSkeleton width={150} height={14} className="mb-3" />
+            <div className="flex gap-2 mb-4">
+              {[1, 2, 3, 4, 5].map((i) => <CSSkeleton key={i} width={96} height={64} radius={8} />)}
+            </div>
+            <CSSkeleton height={300} radius={12} />
+          </div>
+          <div className="lg:col-span-2">
+            <CSSkeleton width={120} height={14} className="mb-3" />
+            <CSSkeleton height={200} radius={8} />
+          </div>
+        </div>
       </PipelineShell>
     );
   }

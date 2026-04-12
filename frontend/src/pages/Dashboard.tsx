@@ -6,7 +6,7 @@ import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSSessionRow } from '@/components/ui/CSSessionRow';
 import { CSEmptyState } from '@/components/ui/CSEmptyState';
-import { CSSkeleton } from '@/components/ui/CSSkeleton';
+import { CSPageSkeleton } from '@/components/ui/CSPageSkeleton';
 import { Film, Plus, FolderOpen, Settings, Clock, CheckCircle2, Zap, Timer } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Session, SessionStats } from '@/lib/api';
@@ -49,6 +49,14 @@ const Dashboard: React.FC = () => {
     load();
   }, []);
 
+  if (loading) {
+    return (
+      <WorkspaceShell>
+        <CSPageSkeleton showStats rows={3} />
+      </WorkspaceShell>
+    );
+  }
+
   return (
     <WorkspaceShell>
       {/* Header + Quick actions */}
@@ -82,7 +90,7 @@ const Dashboard: React.FC = () => {
               <CSMonoLabel>{stat.label}</CSMonoLabel>
             </div>
             <div className="text-2xl font-semibold" style={{ color: 'var(--cs-text-primary)' }}>
-              {loading ? <CSSkeleton width={50} height={28} /> : stat.value}
+              {stat.value}
             </div>
           </CSCard>
         ))}
@@ -117,11 +125,7 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => <CSSkeleton key={i} height={64} radius={12} />)}
-        </div>
-      ) : error ? (
+      {error ? (
         <CSCard padding="default">
           <p className="text-sm" style={{ color: 'var(--cs-danger)' }}>{error}</p>
           <CSButton variant="secondary" size="sm" className="mt-2" onClick={() => window.location.reload()}>Retry</CSButton>
