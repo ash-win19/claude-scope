@@ -30,7 +30,6 @@ const Processing: React.FC = () => {
   const recordingContext = useSessionStore((s) => s.recordingContext);
   const setPipelineStatus = useSessionStore((s) => s.setPipelineStatus);
   const setProcessingResult = useSessionStore((s) => s.setProcessingResult);
-  const activeSessionId = useSessionStore((s) => s.activeSessionId);
 
   const [activeStage, setActiveStage] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -43,8 +42,9 @@ const Processing: React.FC = () => {
   const addLog = (msg: string) => setLogs((prev) => [...prev, msg]);
 
   const handleUpload = async () => {
-    const artifact = recordingArtifact || (activeSessionId ? await loadRecordingBlob(activeSessionId) : null);
+    const artifact = recordingArtifact || await loadRecordingBlob(id ?? '');
     if (!artifact || !recordingContext) {
+      addLog('No recording data found. Redirecting...');
       navigate('/app/record/new');
       return;
     }
@@ -68,6 +68,10 @@ const Processing: React.FC = () => {
         agentTarget: recordingContext.agentTarget,
       });
 
+      if (response.status !== 'complete') {
+        throw new Error(`Server returned status "${response.status}"`);
+      }
+
       addLog('Upload complete. Processing...');
       setPipelineStatus('processing');
       setActiveStage(1);
@@ -82,9 +86,12 @@ const Processing: React.FC = () => {
       setProgress(100);
 
       // Delete IndexedDB artifact (data is now on server)
-      if (activeSessionId) {
-        await deleteRecordingBlob(activeSessionId);
+      if (id) {
+        await deleteRecordingBlob(id);
       }
+
+      // Swap local session ID to the server-assigned one
+      useSessionStore.getState().replaceSessionId(response.sessionId);
 
       // Navigate to review with real session ID
       setTimeout(() => {

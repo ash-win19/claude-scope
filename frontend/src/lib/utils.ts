@@ -15,3 +15,16 @@ export const formatTimestamp = (iso: string): string => {
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
+
+export const formatMs = (ms: number): string => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
+export const formatMsReadable = (ms: number): string => {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = ms / 1000;
+  return `${seconds.toFixed(1)}s`;
+};

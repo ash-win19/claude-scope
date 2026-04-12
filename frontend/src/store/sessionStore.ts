@@ -61,6 +61,7 @@ interface SessionState {
   clearRecordingArtifact: () => void;
   processingResult: ProcessingResponse | null;
   setProcessingResult: (result: ProcessingResponse | null) => void;
+  replaceSessionId: (newId: string) => void;
   cleanupRecording: () => void;
   reset: () => void;
 }
@@ -92,6 +93,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   clearRecordingArtifact: () => set({ recordingArtifact: null }),
   processingResult: null,
   setProcessingResult: (result) => set({ processingResult: result }),
+  replaceSessionId: (newId) => set({ activeSessionId: newId }),
   cleanupRecording: () => {
     const sessionId = get().activeSessionId;
     if (sessionId) {
