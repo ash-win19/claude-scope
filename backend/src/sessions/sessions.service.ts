@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -6,13 +7,17 @@ import {
 } from '@nestjs/common';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
-import { sessions, frames, sessionAnalysis } from '../database/schema';
+import { sessions, frames, sessionAnalysis, AnalysisJson } from '../database/schema';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
+import { SynthesisService } from '../recordings/synthesis.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly synthesis: SynthesisService,
+  ) {}
 
   async create(userId: string, dto: CreateSessionDto) {
     const id = this.generateId('sess');
@@ -151,6 +156,101 @@ export class SessionsService {
       processingTime: session.processingTime,
       lastError: session.lastError,
     };
+  }
+
+  async generatePrompt(userId: string, sessionId: string) {
+    await this.assertOwnership(userId, sessionId);
+
+    const [session] = await this.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const analysis = session.analysis as AnalysisJson | null;
+
+    // Guard: no analysis data available
+    if (!analysis) {
+      throw new BadRequestException('Session has no analysis data. Upload must complete first.');
+    }
+
+    // Guard: already generating
+    if (session.promptStatus === 'generating') {
+      return { sessionId, promptStatus: 'generating', prompt: null };
+    }
+
+    // Guard: already complete with prompt
+    if (session.promptStatus === 'complete' && session.prompt) {
+      return { sessionId, promptStatus: 'complete', prompt: session.prompt };
+    }
+
+    // Set status to generating
+    await this.db.update(sessions).set({
+      promptStatus: 'generating',
+      updatedAt: new Date(),
+    }).where(eq(sessions.id, sessionId));
+
+    try {
+      // Reconstruct inputs for synthesis from stored analysis
+      const timeline = {
+        summary: analysis.timeline.summary,
+        durationMs: analysis.timeline.durationMs,
+        frameCount: analysis.timeline.frameCount,
+        failedFrames: analysis.timeline.failedFrames,
+        events: analysis.timeline.events.map((e) => ({
+          timestampMs: e.timestampMs,
+          frameId: e.frameId,
+          type: e.type as 'initial' | 'state-change' | 'navigation' | 'interaction' | 'error',
+          summary: e.summary,
+          elements: e.elements,
+        })),
+      };
+
+      const inspection = {
+        urlsInspected: analysis.inspection.urlsInspected,
+        snapshots: analysis.inspection.snapshots.map((s) => ({
+          url: s.url,
+          ariaTree: s.ariaTree,
+          counts: s.counts,
+          success: s.success,
+          error: s.error,
+        })),
+        durationMs: analysis.inspection.durationMs,
+      };
+
+      const synthesisResult = this.synthesis.synthesize({
+        timeline,
+        seedUrl: session.seedUrl,
+        agentTarget: session.agentTarget,
+        title: session.title,
+        notes: session.notes ?? undefined,
+        inspection,
+      });
+
+      // Persist prompt and set status to complete
+      await this.db.update(sessions).set({
+        prompt: synthesisResult.prompt,
+        promptStatus: 'complete',
+        promptError: null,
+        updatedAt: new Date(),
+      }).where(eq(sessions.id, sessionId));
+
+      return { sessionId, promptStatus: 'complete', prompt: synthesisResult.prompt };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+
+      await this.db.update(sessions).set({
+        promptStatus: 'error',
+        promptError: message,
+        updatedAt: new Date(),
+      }).where(eq(sessions.id, sessionId));
+
+      throw err;
+    }
   }
 
   private async assertOwnership(userId: string, sessionId: string) {

@@ -57,6 +57,9 @@ export const sessions = pgTable('sessions', {
   inspectionJson: jsonb('inspection_json').$type<InspectionResultJson | null>().default(null),
   /** @deprecated Use sessionAnalysis.inspectionJson.durationMs instead */
   inspectionDurationMs: integer('inspection_duration_ms'),
+  analysis: jsonb('analysis').$type<AnalysisJson | null>().default(null),
+  promptStatus: varchar('prompt_status', { length: 20 }).notNull().default('not_started'),
+  promptError: text('prompt_error'),
   processingStatus: jsonb('processing_status').$type<ProcessingStatusJson | null>().default(null),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
@@ -183,6 +186,25 @@ export interface InspectionResultJson {
     error?: string;
   }>;
   durationMs: number;
+}
+
+export interface AnalysisJson {
+  timeline: {
+    summary: string;
+    durationMs: number;
+    frameCount: number;
+    failedFrames: number;
+    events: Array<{
+      timestampMs: number;
+      frameId: string;
+      type: string;
+      summary: string;
+      elements: Array<{ type: string; label: string; state?: string }>;
+    }>;
+  };
+  inspection: InspectionResultJson;
+  visionSuccessCount: number;
+  totalFrames: number;
 }
 
 export interface LaneStatus {

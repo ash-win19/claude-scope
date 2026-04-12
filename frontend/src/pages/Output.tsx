@@ -39,6 +39,8 @@ const InspectionBrief: React.FC<{ inspection: InspectionSummary | null | undefin
   );
 };
 
+const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'];
+
 const Output: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -47,6 +49,7 @@ const Output: React.FC = () => {
   const [session, setSession] = useState<SessionWithFrames | null>(null);
   const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
+  const [activeAgent, setActiveAgent] = useState(0);
   useDocumentTitle('Prompt');
 
   useEffect(() => {
@@ -63,7 +66,8 @@ const Output: React.FC = () => {
           urlCount: processingResult.urlsInspected.length,
           agentTarget: processingResult.agentTarget as 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW',
           processingTime: processingResult.processingMs,
-          prompt: processingResult.prompt,
+          prompt: processingResult.prompt ?? '',
+          promptStatus: processingResult.promptStatus,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           frames: processingResult.frames,
@@ -128,13 +132,54 @@ const Output: React.FC = () => {
         Built from visual analysis and structural inspection. Copy into any AI coding agent.
       </p>
 
-      <CSCodeBlock
-        content={session?.prompt || '# No prompt generated'}
-        language="markdown"
-        filename="system-prompt.md"
-        showLineNumbers
-        copyable
-      />
+      {/* Agent tabs */}
+      <div className="flex border-b mb-4" style={{ borderColor: 'var(--cs-border-subtle)' }}>
+        {AGENTS.map((agent, i) => (
+          <button
+            key={agent}
+            onClick={() => setActiveAgent(i)}
+            className="px-4 py-2 text-sm transition-colors duration-150"
+            style={{
+              color: activeAgent === i ? 'var(--cs-text-primary)' : 'var(--cs-text-muted)',
+              borderBottom: activeAgent === i ? '2px solid var(--cs-accent)' : '2px solid transparent',
+            }}
+          >
+            {agent}
+          </button>
+        ))}
+      </div>
+
+      {session?.promptStatus === 'complete' && session?.prompt ? (
+        <CSCodeBlock
+          content={session.prompt}
+          language="markdown"
+          filename="system-prompt.md"
+          showLineNumbers
+          copyable
+        />
+      ) : session?.promptStatus === 'generating' ? (
+        <div className="py-12 text-center">
+          <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Generating prompt...</p>
+        </div>
+      ) : (
+        <div className="py-12 text-center">
+          <p className="text-sm mb-4" style={{ color: 'var(--cs-text-muted)' }}>
+            {session?.promptStatus === 'error' ? `Generation failed: ${session?.promptError ?? 'Unknown error'}` : 'Prompt has not been generated yet.'}
+          </p>
+          <CSButton variant="primary" size="md" onClick={async () => {
+            try {
+              const result = await sessionsApi.generatePrompt(id!);
+              if (result.promptStatus === 'complete' && result.prompt) {
+                setSession((prev) => prev ? { ...prev, prompt: result.prompt!, promptStatus: 'complete' } : prev);
+              }
+            } catch {
+              // Handle error
+            }
+          }}>
+            {session?.promptStatus === 'error' ? 'Retry Generation' : 'Generate Prompt'}
+          </CSButton>
+        </div>
+      )}
 
       {/* Output options */}
       <div className="flex gap-4 mt-4 flex-wrap">

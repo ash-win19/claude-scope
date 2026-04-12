@@ -148,13 +148,8 @@ describe('RecordingsService', () => {
     expect(mocks.mockVision.analyzeFrames).toHaveBeenCalled();
     expect(mocks.mockPlaywright.inspectUrls).toHaveBeenCalledWith([mockDto.seedUrl]);
 
-    // Verify synthesis received both timeline AND inspection (not undefined)
-    const synthesisCall = mocks.mockSynthesis.synthesize.mock.calls[0][0];
-    expect(synthesisCall.timeline).toBeDefined();
-    expect(synthesisCall.inspection).toBeDefined();
-
     expect(result.status).toBe('complete');
-    expect(result.prompt).toBe('# Test Prompt');
+    expect(result.promptStatus).toBe('not_started');
     expect(result.frames).toBeDefined();
     expect(result.inspection).toBeDefined();
     expect(result.processingMs).toBeGreaterThanOrEqual(0);
