@@ -47,6 +47,8 @@ export const sessions = pgTable('sessions', {
   urls: jsonb('urls').$type<string[]>().notNull().default([]),
   processingTime: integer('processing_time').notNull().default(0),
   prompt: text('prompt').notNull().default(''),
+  agentTarget: agentTypeEnum('agent_target').notNull().default('CLAUDE_CODE'),
+  urlCount: integer('url_count').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

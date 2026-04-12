@@ -24,6 +24,10 @@ export class SessionsService {
         userId,
         title: dto.title,
         status: 'processing',
+        prompt: dto.prompt ?? '',
+        agentTarget: dto.agentTarget ?? 'CLAUDE_CODE',
+        frameCount: dto.frameCount ?? 0,
+        urlCount: dto.urlCount ?? 0,
       })
       .returning();
 
@@ -72,6 +76,9 @@ export class SessionsService {
     if (dto.processingTime !== undefined)
       updateData.processingTime = dto.processingTime;
     if (dto.prompt !== undefined) updateData.prompt = dto.prompt;
+    if (dto.agentTarget !== undefined) updateData.agentTarget = dto.agentTarget;
+    if (dto.frameCount !== undefined) updateData.frameCount = dto.frameCount;
+    if (dto.urlCount !== undefined) updateData.urlCount = dto.urlCount;
 
     const [updated] = await this.db
       .update(sessions)
