@@ -16,7 +16,7 @@ export interface ProcessedFrame {
 
 export interface ProcessingResponse {
   sessionId: string;
-  status: 'complete' | 'error';
+  status: 'complete';
   title: string;
   seedUrl: string;
   agentTarget: string;

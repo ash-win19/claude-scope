@@ -50,6 +50,9 @@ export const sessions = pgTable('sessions', {
   prompt: text('prompt').notNull().default(''),
   agentTarget: agentTypeEnum('agent_target').notNull().default('CLAUDE_CODE'),
   urlCount: integer('url_count').notNull().default(0),
+  seedUrl: text('seed_url').notNull().default(''),
+  notes: text('notes'),
+  lastError: text('last_error'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

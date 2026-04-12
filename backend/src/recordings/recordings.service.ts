@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -41,6 +41,8 @@ export class RecordingsService {
       title: dto.title,
       status: 'processing',
       agentTarget: dto.agentTarget ?? 'CLAUDE_CODE',
+      seedUrl: dto.seedUrl,
+      notes: dto.notes ?? null,
     });
 
     // 2. Create temp workspace
@@ -88,6 +90,7 @@ export class RecordingsService {
 
       for (let i = 0; i < extractedFrames.length; i++) {
         const ef = extractedFrames[i];
+        const analysis = visionResults[i];
         const frameId = this.generateId('frm');
 
         // Read frame file as base64 data URL for thumbnailUrl
@@ -95,14 +98,42 @@ export class RecordingsService {
         const base64 = frameBuffer.toString('base64');
         const thumbnailUrl = `data:image/png;base64,${base64}`;
 
+        // Convert vision elements to ARIANodeJson shape
+        const ariaTree = analysis && analysis.success
+          ? analysis.elements.map((el) => ({
+              role: el.type,
+              name: el.label,
+              ...(el.state ? { diffStatus: undefined } : {}),
+            }))
+          : [];
+
+        // Compute basic diffSummary by comparing element counts with previous frame
+        let diffSummary = { added: 0, changed: 0, removed: 0 };
+        if (i > 0 && analysis?.success) {
+          const prevAnalysis = visionResults[i - 1];
+          if (prevAnalysis?.success) {
+            const prevNames = new Set(prevAnalysis.elements.map((e) => `${e.type}:${e.label}`));
+            const currNames = new Set(analysis.elements.map((e) => `${e.type}:${e.label}`));
+            let added = 0;
+            let removed = 0;
+            for (const name of currNames) {
+              if (!prevNames.has(name)) added++;
+            }
+            for (const name of prevNames) {
+              if (!currNames.has(name)) removed++;
+            }
+            diffSummary = { added, changed: 0, removed };
+          }
+        }
+
         const [inserted] = await this.db.insert(frames).values({
           id: frameId,
           sessionId,
           timestamp: ef.timestampMs,
           url: dto.seedUrl,
           thumbnailUrl,
-          diffSummary: { added: 0, changed: 0, removed: 0 },
-          ariaTree: [],
+          diffSummary,
+          ariaTree,
         }).returning();
 
         persistedFrames.push({
@@ -129,6 +160,8 @@ export class RecordingsService {
         prompt: synthesisResult.prompt,
         urls: urlsInspected,
         duration: Math.round(timeline.durationMs / 1000),
+        seedUrl: dto.seedUrl,
+        notes: dto.notes ?? null,
         updatedAt: new Date(),
       }).where(eq(sessions.id, sessionId));
 
@@ -150,30 +183,23 @@ export class RecordingsService {
         processingMs,
       };
     } catch (err) {
-      // Handle failure: update session to error status
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`[${sessionId}] Processing failed: ${message}`);
 
+      const processingMs = Date.now() - startTime;
+
       await this.db.update(sessions).set({
         status: 'error',
-        processingTime: Date.now() - startTime,
+        processingTime: processingMs,
+        lastError: message,
         updatedAt: new Date(),
       }).where(eq(sessions.id, sessionId));
 
-      return {
+      throw new InternalServerErrorException({
         sessionId,
-        status: 'error',
-        title: dto.title,
-        seedUrl: dto.seedUrl,
-        agentTarget: dto.agentTarget ?? 'CLAUDE_CODE',
-        fileSize: file.size,
-        mimeType: file.mimetype,
-        prompt: '',
-        frames: [],
-        frameCount: 0,
-        urlsInspected: [],
-        processingMs: Date.now() - startTime,
-      };
+        error: message,
+        processingMs,
+      });
     } finally {
       // 11. Cleanup temp files
       try {

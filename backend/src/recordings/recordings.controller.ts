@@ -21,6 +21,7 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RecordingsService } from './recordings.service';
 import { UploadRecordingDto } from './dto/upload-recording.dto';
+import { ProcessingResponse } from './types/processing-response';
 
 @ApiTags('Recordings')
 @ApiBearerAuth()
@@ -45,7 +46,7 @@ export class RecordingsController {
       }),
     )
     file: Express.Multer.File,
-  ) {
+  ): Promise<ProcessingResponse> {
     const { id } = req.user as { id: string };
     return this.recordingsService.processUpload(id, file, dto);
   }
