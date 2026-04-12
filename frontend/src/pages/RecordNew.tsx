@@ -9,6 +9,7 @@ import { CSProgressBar } from '@/components/ui/CSProgressBar';
 import { CSInput } from '@/components/ui/CSInput';
 import { useSessionStore } from '@/store/sessionStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const AGENT_OPTIONS = ['CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW'] as const;
 type AgentTarget = (typeof AGENT_OPTIONS)[number];
@@ -35,6 +36,7 @@ const RecordNew: React.FC = () => {
   const setRecordingContext = useSessionStore((s) => s.setRecordingContext);
   const setRecordingArtifact = useSessionStore((s) => s.setRecordingArtifact);
   const cleanupRecording = useSessionStore((s) => s.cleanupRecording);
+  useDocumentTitle('New Recording');
   const [captureId] = useState(() => `capture_${crypto.randomUUID().slice(0, 8)}`);
 
   const [title, setTitle] = useState('');

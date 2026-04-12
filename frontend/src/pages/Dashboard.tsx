@@ -12,6 +12,7 @@ import { sessions as sessionsApi } from '@/lib/api';
 import type { Session, SessionStats } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 function getFirstName(fullName: string | undefined): string | null {
   if (!fullName) return null;
@@ -28,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const firstName = getFirstName(user?.name);
+  useDocumentTitle('Dashboard');
 
   useEffect(() => {
     async function load() {

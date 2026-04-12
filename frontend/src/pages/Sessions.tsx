@@ -11,6 +11,7 @@ import { Film, SlidersHorizontal, Search } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Session } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const Sessions: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const Sessions: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('any');
+  useDocumentTitle('Sessions');
 
   useEffect(() => {
     async function load() {

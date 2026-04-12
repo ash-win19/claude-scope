@@ -9,6 +9,7 @@ import { Film, Search, Zap, Check, ChevronDown } from 'lucide-react';
 import { useSessionStore } from '@/store/sessionStore';
 import { loadRecordingBlob, deleteRecordingBlob } from '@/lib/recordingStorage';
 import { recordings } from '@/lib/api';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 interface Stage {
   icon: React.ReactNode;
@@ -38,6 +39,7 @@ const Processing: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const uploadAttempted = useRef(false);
+  useDocumentTitle('Processing');
 
   const addLog = (msg: string) => setLogs((prev) => [...prev, msg]);
 

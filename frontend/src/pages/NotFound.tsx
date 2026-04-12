@@ -2,9 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const NotFound: React.FC = () => {
   const navigate = useNavigate();
+  useDocumentTitle('Page Not Found');
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
       <CSMonoLabel>ERROR</CSMonoLabel>

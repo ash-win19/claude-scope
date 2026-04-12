@@ -9,6 +9,7 @@ import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { useCSToast } from '@/components/ui/CSToast';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 function getUserInitials(name: string | undefined, email: string | undefined): string {
   if (name?.trim()) {
@@ -26,6 +27,7 @@ const Settings: React.FC = () => {
   const { showToast } = useCSToast();
   const { logout: auth0Logout } = useAuth0();
   const storeLogout = useAuthStore((s) => s.logout);
+  useDocumentTitle('Settings');
 
   const handleLogout = () => {
     storeLogout();

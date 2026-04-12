@@ -11,6 +11,7 @@ import { sessions as sessionsApi } from '@/lib/api';
 import type { SessionWithFrames, InspectionSummary } from '@/lib/api';
 import { formatDuration, formatTimestamp, formatMsReadable } from '@/lib/utils';
 import { ArrowLeft, Plus, ChevronDown } from 'lucide-react';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
 
@@ -47,6 +48,7 @@ const Output: React.FC = () => {
   const [session, setSession] = useState<SessionWithFrames | null>(null);
   const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
+  useDocumentTitle('Output');
 
   useEffect(() => {
     async function loadSession() {
