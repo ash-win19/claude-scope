@@ -12,7 +12,7 @@ export const Auth0ProviderWithNavigate: React.FC<{ children: React.ReactNode }> 
       clientId={clientId}
       authorizationParams={{
         redirect_uri: window.location.origin + '/app',
-        audience,
+        ...(audience ? { audience } : {}),
       }}
       cacheLocation="localstorage"
     >
