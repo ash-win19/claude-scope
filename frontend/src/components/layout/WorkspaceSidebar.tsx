@@ -59,6 +59,16 @@ export const WorkspaceSidebar: React.FC = () => {
             <X size={16} />
           </button>
         )}
+        {!closeMobile && (
+          <button
+            onClick={toggle}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="ml-auto p-1 rounded transition-colors duration-150"
+            style={{ color: 'var(--cs-text-muted)' }}
+          >
+            {isCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 flex flex-col gap-1 px-2 py-4">
@@ -73,17 +83,6 @@ export const WorkspaceSidebar: React.FC = () => {
 
       <div className="px-2 py-3 border-t flex flex-col gap-1" style={{ borderColor: 'var(--cs-border-subtle)' }}>
         <NavItem to="/workspace/settings" icon={<Settings size={16} />} label="Settings" active={isActive('/workspace/settings')} collapsed={isCollapsed} onClick={closeMobile} />
-        {!closeMobile && (
-          <button
-            onClick={toggle}
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className={`flex items-center gap-3 rounded-lg text-sm transition-colors duration-150 ${isCollapsed ? 'justify-center px-2 py-2' : 'px-3 py-2'}`}
-            style={{ color: 'var(--cs-text-muted)' }}
-          >
-            {isCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
-            {!isCollapsed && <span className="flex-1">Collapse</span>}
-          </button>
-        )}
         {user && !isCollapsed && (
           <div className="flex items-center gap-3 px-3 py-2 mt-1">
             {user.avatarUrl ? (
