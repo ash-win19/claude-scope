@@ -16,6 +16,7 @@ const FrameReview = lazy(() => import('@/pages/FrameReview'));
 const Output = lazy(() => import('@/pages/Output'));
 const Integrations = lazy(() => import('@/pages/Integrations'));
 const ModelAccess = lazy(() => import('@/pages/ModelAccess'));
+const Docs = lazy(() => import('@/pages/Docs'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const PageSkeleton: React.FC = () => (
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
   { path: '/workspace/record/:id/output', element: wrapAuth(Output) },
   { path: '/workspace/integrations', element: wrapAuth(Integrations) },
   { path: '/workspace/model-access', element: wrapAuth(ModelAccess) },
+  { path: '/workspace/docs', element: wrapAuth(Docs) },
 
   // Legacy /app redirects
   { path: '/app', element: <Navigate to="/workspace" replace /> },
