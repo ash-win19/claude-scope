@@ -10,7 +10,7 @@ const Auth: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/app');
+      navigate('/workspace');
       return;
     }
     if (!isLoading && !redirected.current && !error) {

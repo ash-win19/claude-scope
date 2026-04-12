@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppShell } from '@/components/layout/AppShell';
+import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSInput } from '@/components/ui/CSInput';
 import { CSCard } from '@/components/ui/CSCard';
@@ -50,7 +50,7 @@ const Sessions: React.FC = () => {
   });
 
   return (
-    <AppShell>
+    <WorkspaceShell>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-[28px] font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Sessions</h1>
         <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ const Sessions: React.FC = () => {
           title="No sessions"
           description="Record a tab to get started."
           ctaLabel="New Recording"
-          ctaAction={() => navigate('/app/record/new')}
+          ctaAction={() => navigate('/workspace/record/new')}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -136,12 +136,12 @@ const Sessions: React.FC = () => {
               frameCount={session.frameCount}
               timestamp={formatTimestamp(session.createdAt)}
               status={session.status}
-              onClick={() => navigate(`/app/sessions/${session.id}`)}
+              onClick={() => navigate(`/workspace/sessions/${session.id}`)}
             />
           ))}
         </div>
       )}
-    </AppShell>
+    </WorkspaceShell>
   );
 };
 

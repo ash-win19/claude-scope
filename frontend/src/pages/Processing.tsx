@@ -45,7 +45,7 @@ const Processing: React.FC = () => {
     const artifact = recordingArtifact || await loadRecordingBlob(id ?? '');
     if (!artifact || !recordingContext) {
       addLog('No recording data found. Redirecting...');
-      navigate('/app/record/new');
+      navigate('/workspace/record/new');
       return;
     }
 
@@ -95,7 +95,7 @@ const Processing: React.FC = () => {
 
       // Navigate to review with real session ID
       setTimeout(() => {
-        navigate(`/app/record/${response.sessionId}/review`, { replace: true });
+        navigate(`/workspace/record/${response.sessionId}/review`, { replace: true });
       }, 800);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed';
@@ -200,7 +200,7 @@ const Processing: React.FC = () => {
       <div className="flex justify-center mt-6">
         <CSButton variant="ghost" size="sm" style={{ color: 'var(--cs-danger)' }} onClick={() => {
           cleanupRecording();
-          navigate('/app');
+          navigate('/workspace');
         }}>
           Cancel and discard →
         </CSButton>

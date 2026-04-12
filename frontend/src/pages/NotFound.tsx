@@ -10,7 +10,7 @@ const NotFound: React.FC = () => {
       <CSMonoLabel>ERROR</CSMonoLabel>
       <span className="font-mono text-7xl mt-2" style={{ color: 'var(--cs-text-muted)' }}>404</span>
       <p className="text-sm mt-4" style={{ color: 'var(--cs-text-secondary)' }}>This page doesn't exist.</p>
-      <CSButton variant="primary" className="mt-6" onClick={() => navigate('/app')}>
+      <CSButton variant="primary" className="mt-6" onClick={() => navigate('/workspace')}>
         ← Go to Dashboard
       </CSButton>
     </div>

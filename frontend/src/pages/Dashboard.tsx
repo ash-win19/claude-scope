@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppShell } from '@/components/layout/AppShell';
+import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
@@ -48,13 +48,13 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <AppShell>
+    <WorkspaceShell>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-[28px] font-semibold" style={{ color: 'var(--cs-text-primary)' }}>
           {firstName ? `Hey ${firstName}` : 'Dashboard'}
         </h1>
-        <CSButton variant="primary" size="md" iconLeft={<Plus size={16} />} onClick={() => navigate('/app/record/new')}>
+        <CSButton variant="primary" size="md" iconLeft={<Plus size={16} />} onClick={() => navigate('/workspace/record/new')}>
           New Recording
         </CSButton>
       </div>
@@ -84,7 +84,7 @@ const Dashboard: React.FC = () => {
       {/* Recent sessions */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Recent sessions</h2>
-        <CSButton variant="ghost" size="sm" onClick={() => navigate('/app/sessions')}>
+        <CSButton variant="ghost" size="sm" onClick={() => navigate('/workspace/sessions')}>
           View all →
         </CSButton>
       </div>
@@ -104,7 +104,7 @@ const Dashboard: React.FC = () => {
           title="No recordings yet"
           description="Record a browser tab to get started with your first session."
           ctaLabel="New Recording"
-          ctaAction={() => navigate('/app/record/new')}
+          ctaAction={() => navigate('/workspace/record/new')}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -116,12 +116,12 @@ const Dashboard: React.FC = () => {
               frameCount={session.frameCount}
               timestamp={formatTimestamp(session.createdAt)}
               status={session.status}
-              onClick={() => navigate(`/app/sessions/${session.id}`)}
+              onClick={() => navigate(`/workspace/sessions/${session.id}`)}
             />
           ))}
         </div>
       )}
-    </AppShell>
+    </WorkspaceShell>
   );
 };
 

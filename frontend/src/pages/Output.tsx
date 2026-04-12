@@ -76,7 +76,7 @@ const Output: React.FC = () => {
         setSession(data);
         setInspection(data.inspectionJson ?? null);
       } catch {
-        navigate('/app');
+        navigate('/workspace');
       } finally {
         setLoading(false);
       }
@@ -92,7 +92,7 @@ const Output: React.FC = () => {
 
   const handleSave = () => {
     showToast('Session saved ✓', 'success');
-    navigate(`/app/sessions/${id}`);
+    navigate(`/workspace/sessions/${id}`);
   };
 
   if (loading) {
@@ -181,11 +181,11 @@ const Output: React.FC = () => {
 
       {/* Action row */}
       <div className="flex items-center justify-between mt-8">
-        <CSButton variant="ghost" size="sm" iconLeft={<ArrowLeft size={14} />} onClick={() => navigate(`/app/record/${id}/review`)}>
+        <CSButton variant="ghost" size="sm" iconLeft={<ArrowLeft size={14} />} onClick={() => navigate(`/workspace/record/${id}/review`)}>
           Back to Review
         </CSButton>
         <div className="flex gap-2">
-          <CSButton variant="secondary" size="sm" iconLeft={<Plus size={14} />} onClick={() => navigate('/app/record/new')}>
+          <CSButton variant="secondary" size="sm" iconLeft={<Plus size={14} />} onClick={() => navigate('/workspace/record/new')}>
             New Recording
           </CSButton>
           <CSButton variant="primary" size="md" onClick={handleSave}>

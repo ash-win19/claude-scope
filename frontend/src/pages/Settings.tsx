@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { AppShell } from '@/components/layout/AppShell';
+import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSInput } from '@/components/ui/CSInput';
@@ -33,7 +33,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <AppShell maxWidth={640}>
+    <WorkspaceShell maxWidth={640}>
       <h1 className="text-[28px] font-semibold mb-8" style={{ color: 'var(--cs-text-primary)' }}>Settings</h1>
 
       {/* Output Preferences */}
@@ -165,7 +165,7 @@ const Settings: React.FC = () => {
           </div>
         </CSCard>
       </section>
-    </AppShell>
+    </WorkspaceShell>
   );
 };
 
