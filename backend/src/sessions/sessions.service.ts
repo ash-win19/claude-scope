@@ -115,6 +115,43 @@ export class SessionsService {
     return result;
   }
 
+  async getProcessingStatus(userId: string, sessionId: string) {
+    const [session] = await this.db
+      .select({
+        id: sessions.id,
+        status: sessions.status,
+        processingStatus: sessions.processingStatus,
+        processingTime: sessions.processingTime,
+        lastError: sessions.lastError,
+      })
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    // Verify ownership
+    const [owner] = await this.db
+      .select({ userId: sessions.userId })
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .limit(1);
+
+    if (owner.userId !== userId) {
+      throw new ForbiddenException();
+    }
+
+    return {
+      sessionId: session.id,
+      sessionStatus: session.status,
+      processingStatus: session.processingStatus,
+      processingTime: session.processingTime,
+      lastError: session.lastError,
+    };
+  }
+
   async generatePrompt(userId: string, sessionId: string) {
     await this.assertOwnership(userId, sessionId);
 

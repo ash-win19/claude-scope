@@ -1,11 +1,12 @@
 import React from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSection } from '@/components/layout/PageSection';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSInput } from '@/components/ui/CSInput';
 import { CSToggle } from '@/components/ui/CSToggle';
-import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { useCSToast } from '@/components/ui/CSToast';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
@@ -36,12 +37,11 @@ const Settings: React.FC = () => {
 
   return (
     <WorkspaceShell maxWidth={640}>
-      <h1 className="text-[28px] font-semibold mb-8" style={{ color: 'var(--cs-text-primary)' }}>Settings</h1>
+      <PageHeader title="Settings" />
 
       {/* Output Preferences */}
-      <section className="mb-10">
-        <CSMonoLabel>OUTPUT PREFERENCES</CSMonoLabel>
-        <div className="flex flex-col gap-5 mt-4">
+      <PageSection label="OUTPUT PREFERENCES">
+        <div className="flex flex-col gap-5">
           <div>
             <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--cs-text-secondary)' }}>
               Default agent target
@@ -97,12 +97,11 @@ const Settings: React.FC = () => {
             </select>
           </div>
         </div>
-      </section>
+      </PageSection>
 
       {/* Account */}
-      <section className="mb-10">
-        <CSMonoLabel>ACCOUNT</CSMonoLabel>
-        <div className="flex flex-col gap-4 mt-4">
+      <PageSection label="ACCOUNT">
+        <div className="flex flex-col gap-4">
           {/* Profile card */}
           <div className="flex items-center gap-4">
             {user?.avatarUrl ? (
@@ -144,14 +143,12 @@ const Settings: React.FC = () => {
             </CSButton>
           </div>
         </div>
-      </section>
+      </PageSection>
 
       {/* Danger Zone */}
-      <section>
-        <CSMonoLabel>DANGER ZONE</CSMonoLabel>
+      <PageSection label="DANGER ZONE">
         <CSCard
           padding="default"
-          className="mt-4"
           style={{
             backgroundColor: 'var(--cs-danger-muted)',
             borderColor: 'var(--cs-danger)',
@@ -166,7 +163,7 @@ const Settings: React.FC = () => {
             </CSButton>
           </div>
         </CSCard>
-      </section>
+      </PageSection>
     </WorkspaceShell>
   );
 };

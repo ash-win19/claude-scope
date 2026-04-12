@@ -86,6 +86,7 @@ export interface Session {
   id: string;
   userId: string;
   title: string;
+  seedUrl?: string | null;
   status: 'processing' | 'complete' | 'error';
   duration: number;
   frameCount: number;
@@ -142,6 +143,33 @@ export interface InspectionSummary {
   urlsInspected: string[];
   snapshots: InspectionSnapshot[];
   durationMs: number;
+}
+
+// ── Processing status types ──
+export interface LaneStatus {
+  status: 'pending' | 'running' | 'complete' | 'error';
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+  detail?: string;
+}
+
+export interface ProcessingStatus {
+  overallStage: 'uploading' | 'extracting' | 'analyzing' | 'synthesizing' | 'persisting' | 'complete' | 'error';
+  visionLane: LaneStatus;
+  playwrightLane: LaneStatus;
+  frameExtraction: LaneStatus;
+  synthesis: LaneStatus;
+  lastUpdated: string;
+  lastError?: string;
+}
+
+export interface SessionStatusResponse {
+  sessionId: string;
+  sessionStatus: 'processing' | 'complete' | 'error';
+  processingStatus: ProcessingStatus | null;
+  processingTime: number;
+  lastError: string | null;
 }
 
 export interface SessionWithFrames extends Session {
@@ -274,6 +302,8 @@ export const sessions = {
     request<GeneratePromptResponse>(`/sessions/${id}/generate-prompt`, {
       method: 'POST',
     }),
+
+  status: (id: string) => request<SessionStatusResponse>(`/sessions/${id}/status`),
 };
 
 // ── Settings API ──

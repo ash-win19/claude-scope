@@ -58,6 +58,7 @@ export const sessions = pgTable('sessions', {
   analysis: jsonb('analysis').$type<AnalysisJson | null>().default(null),
   promptStatus: varchar('prompt_status', { length: 20 }).notNull().default('not_started'),
   promptError: text('prompt_error'),
+  processingStatus: jsonb('processing_status').$type<ProcessingStatusJson | null>().default(null),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -144,4 +145,22 @@ export interface AnalysisJson {
   inspection: InspectionResultJson;
   visionSuccessCount: number;
   totalFrames: number;
+}
+
+export interface LaneStatus {
+  status: 'pending' | 'running' | 'complete' | 'error';
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+  detail?: string;
+}
+
+export interface ProcessingStatusJson {
+  overallStage: 'uploading' | 'extracting' | 'analyzing' | 'synthesizing' | 'persisting' | 'complete' | 'error';
+  visionLane: LaneStatus;
+  playwrightLane: LaneStatus;
+  frameExtraction: LaneStatus;
+  synthesis: LaneStatus;
+  lastUpdated: string;
+  lastError?: string;
 }

@@ -4,7 +4,7 @@ import { PipelineShell } from '@/components/layout/PipelineShell';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
-import { CSToggle } from '@/components/ui/CSToggle';
+import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { useSessionStore } from '@/store/sessionStore';
 import { formatMs } from '@/lib/utils';
 import { sessions as sessionsApi } from '@/lib/api';
@@ -133,7 +133,6 @@ const FrameReview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
   const [frames, setFrames] = useState<Frame[]>([]);
-  const [diffView, setDiffView] = useState(false);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -176,7 +175,19 @@ const FrameReview: React.FC = () => {
   if (loading) {
     return (
       <PipelineShell currentStep={2} maxWidth={1100}>
-        <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Loading session data...</p>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3">
+            <CSSkeleton width={150} height={14} className="mb-3" />
+            <div className="flex gap-2 mb-4">
+              {[1, 2, 3, 4, 5].map((i) => <CSSkeleton key={i} width={96} height={64} radius={8} />)}
+            </div>
+            <CSSkeleton height={300} radius={12} />
+          </div>
+          <div className="lg:col-span-2">
+            <CSSkeleton width={120} height={14} className="mb-3" />
+            <CSSkeleton height={200} radius={8} />
+          </div>
+        </div>
       </PipelineShell>
     );
   }
@@ -224,12 +235,17 @@ const FrameReview: React.FC = () => {
         <div className="lg:col-span-3">
           {/* Filmstrip */}
           <div className="mb-4">
-            <CSMonoLabel>FRAMES CAPTURED ({frames.length})</CSMonoLabel>
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+            <div className="flex items-center justify-between mb-3">
+              <CSMonoLabel>FRAMES ({frames.length})</CSMonoLabel>
+              <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
+                Select frames to include in your prompt
+              </span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
               {frames.map((frame, i) => (
                 <div
                   key={frame.id}
-                  className="relative shrink-0 w-20 h-14 rounded cursor-pointer bg-cover bg-center transition-all duration-150"
+                  className="relative shrink-0 w-24 h-16 rounded cursor-pointer bg-cover bg-center transition-all duration-150"
                   style={{
                     backgroundImage: `url(${frame.thumbnailUrl})`,
                     backgroundColor: 'var(--cs-bg-overlay)',
@@ -294,18 +310,12 @@ const FrameReview: React.FC = () => {
 
         {/* Right panel — 40% */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-2">
-            <CSMonoLabel>COMPONENTS AT {selectedFrame ? formatMs(selectedFrame.timestamp) : '--'}</CSMonoLabel>
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: 'var(--cs-text-secondary)' }}>Diff view</span>
-              <CSToggle checked={diffView} onCheckedChange={setDiffView} disabled={!selectedFrame || selectedFrame.ariaTree.length === 0} />
-            </div>
-          </div>
-          <div className="h-px mb-3" style={{ backgroundColor: 'var(--cs-border-subtle)' }} />
+          <CSMonoLabel>COMPONENTS AT {selectedFrame ? formatMs(selectedFrame.timestamp) : '--'}</CSMonoLabel>
+          <div className="h-px my-3" style={{ backgroundColor: 'var(--cs-border-subtle)' }} />
 
           {selectedFrame && (
             selectedFrame.ariaTree.length > 0 ? (
-              <ARIATree nodes={selectedFrame.ariaTree} diffOnly={diffView} />
+              <ARIATree nodes={selectedFrame.ariaTree} />
             ) : (
               <p className="text-xs py-4 text-center" style={{ color: 'var(--cs-text-muted)' }}>
                 No component data available for this frame.
@@ -313,22 +323,25 @@ const FrameReview: React.FC = () => {
             )
           )}
 
-          {/* Legend */}
-          <div className="flex gap-4 mt-4 pt-3 border-t" style={{ borderColor: 'var(--cs-border-subtle)' }}>
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--cs-diff-added)' }} />
-              <span style={{ color: 'var(--cs-text-secondary)' }}>Added</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--cs-diff-changed)' }} />
-              <span style={{ color: 'var(--cs-text-secondary)' }}>Changed</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--cs-diff-removed)' }} />
-              <span style={{ color: 'var(--cs-text-secondary)' }}>Removed</span>
-            </div>
-          </div>
         </div>
+      </div>
+
+      {/* Sticky CTA */}
+      <div
+        className="sticky bottom-0 left-0 right-0 flex items-center justify-between py-4 px-6 -mx-6 mt-8 border-t"
+        style={{ backgroundColor: 'var(--cs-bg-base)', borderColor: 'var(--cs-border-subtle)' }}
+      >
+        <span className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>
+          {frames.length} frame{frames.length !== 1 ? 's' : ''} selected
+        </span>
+        <CSButton
+          variant="primary"
+          size="lg"
+          disabled={frames.length === 0}
+          onClick={() => navigate(`/workspace/record/${id}/output`)}
+        >
+          Generate Prompt →
+        </CSButton>
       </div>
     </PipelineShell>
   );

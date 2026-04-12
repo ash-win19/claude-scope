@@ -44,6 +44,13 @@ export class SessionsController {
     return this.sessionsService.getStats(id);
   }
 
+  @Get(':id/status')
+  @ApiOperation({ summary: 'Get processing status for a session' })
+  getStatus(@Req() req: Request, @Param('id') sessionId: string) {
+    const { id } = req.user as { id: string };
+    return this.sessionsService.getProcessingStatus(id, sessionId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single session with frames' })
   findOne(@Req() req: Request, @Param('id') sessionId: string) {

@@ -1,3 +1,5 @@
+import type { ProcessingStatusJson } from '../../database/schema';
+
 export interface ProcessedFrame {
   id: string;
   sessionId: string;
@@ -39,4 +41,5 @@ export interface ProcessingResponse {
   urlsInspected: string[];
   processingMs: number;
   inspection: InspectionSummary;
+  processingStatus?: ProcessingStatusJson;
 }

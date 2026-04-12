@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSInput } from '@/components/ui/CSInput';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSSessionRow } from '@/components/ui/CSSessionRow';
 import { CSEmptyState } from '@/components/ui/CSEmptyState';
-import { CSSkeleton } from '@/components/ui/CSSkeleton';
+import { CSListSkeleton } from '@/components/ui/CSListSkeleton';
 import { Film, SlidersHorizontal, Search } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Session } from '@/lib/api';
@@ -53,21 +54,21 @@ const Sessions: React.FC = () => {
 
   return (
     <WorkspaceShell>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[28px] font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Sessions</h1>
-        <div className="flex items-center gap-2">
-          <CSInput
-            placeholder="Search sessions..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            iconLeft={<Search size={14} />}
-            className="w-60"
-          />
-          <CSButton variant="secondary" size="sm" iconLeft={<SlidersHorizontal size={14} />} onClick={() => setShowFilters(!showFilters)}>
-            Filter
-          </CSButton>
-        </div>
-      </div>
+      <PageHeader title="Sessions">
+        <CSInput
+          placeholder="Search sessions..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          iconLeft={<Search size={14} />}
+          className="w-60"
+        />
+        <CSButton variant="secondary" size="sm" iconLeft={<SlidersHorizontal size={14} />} onClick={() => setShowFilters(!showFilters)}>
+          Filter
+        </CSButton>
+        <CSButton variant="primary" size="sm" onClick={() => navigate('/workspace/record/new')}>
+          + New
+        </CSButton>
+      </PageHeader>
 
       {showFilters && (
         <CSCard padding="compact" className="mb-4">
@@ -111,10 +112,14 @@ const Sessions: React.FC = () => {
         </CSCard>
       )}
 
+      {(search || statusFilter !== 'all' || dateFilter !== 'any') && (
+        <p className="text-xs mb-3" style={{ color: 'var(--cs-text-muted)' }}>
+          {filtered.length} of {sessionList.length} sessions
+        </p>
+      )}
+
       {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => <CSSkeleton key={i} height={64} radius={12} />)}
-        </div>
+        <CSListSkeleton rows={5} />
       ) : error ? (
         <CSCard padding="default">
           <p className="text-sm" style={{ color: 'var(--cs-danger)' }}>{error}</p>

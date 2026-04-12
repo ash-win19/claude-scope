@@ -4,49 +4,65 @@
 
 @layer base {
   :root {
-    /* ── Surfaces ── */
-    --cs-bg-base:        #080810;
-    --cs-bg-surface:     #0F0F1A;
-    --cs-bg-raised:      #161625;
-    --cs-bg-overlay:     #1E1E30;
+    /* ── Surfaces (dark mode — neutral charcoal) ── */
+    --cs-bg-base:        #121212;
+    --cs-bg-surface:     #1E1E1E;
+    --cs-bg-raised:      #2A2A2A;
+    --cs-bg-overlay:     #3C3C3C;
 
     /* ── Borders ── */
-    --cs-border-subtle:  rgba(255, 255, 255, 0.06);
-    --cs-border-default: rgba(255, 255, 255, 0.12);
-    --cs-border-strong:  rgba(255, 255, 255, 0.22);
+    --cs-border-subtle:  rgba(255, 255, 255, 0.08);
+    --cs-border-default: rgba(255, 255, 255, 0.14);
+    --cs-border-strong:  rgba(255, 255, 255, 0.24);
 
     /* ── Text ── */
-    --cs-text-primary:   #F0F0F8;
-    --cs-text-secondary: #8888A0;
-    --cs-text-muted:     #444458;
+    --cs-text-primary:   #F1F1F1;
+    --cs-text-secondary: #A0A0A0;
+    --cs-text-muted:     #666666;
 
-    /* ── Brand ── */
-    --cs-accent:         #7B6EF6;
-    --cs-accent-hover:   #9388F8;
-    --cs-accent-muted:   rgba(123, 110, 246, 0.15);
-    --cs-accent-border:  rgba(123, 110, 246, 0.35);
+    /* ── Brand — primary red ("Crimson Intelligence") ── */
+    --cs-accent:         #E03030;
+    --cs-accent-hover:   #FF5A5A;
+    --cs-accent-muted:   rgba(224, 48, 48, 0.15);
+    --cs-accent-border:  rgba(224, 48, 48, 0.35);
+    --cs-accent-deep:    #A81F1F;
+    --cs-on-accent:      #FFFFFF;
 
-    /* ── Semantic ── */
+    /* ── Brand — secondary blue ── */
+    --cs-secondary:      #1E88E5;
+    --cs-secondary-hover: #64B5F6;
+    --cs-secondary-muted: rgba(30, 136, 229, 0.15);
+    --cs-secondary-deep: #1356A3;
+
+    /* ── Brand — accent teal ── */
+    --cs-teal:           #00C9A7;
+    --cs-teal-hover:     #4DFFD9;
+    --cs-teal-muted:     rgba(0, 201, 167, 0.15);
+    --cs-teal-deep:      #008C75;
+
+    /* ── Neutral ── */
+    --cs-neutral:        #4A4A4A;
+
+    /* ── Semantic (danger uses coral, NOT brand red) ── */
     --cs-success:        #4ADE80;
     --cs-success-muted:  rgba(74, 222, 128, 0.12);
     --cs-warning:        #FBBF24;
     --cs-warning-muted:  rgba(251, 191, 36, 0.12);
-    --cs-danger:         #F87171;
-    --cs-danger-muted:   rgba(248, 113, 113, 0.12);
-    --cs-info:           #60A5FA;
-    --cs-info-muted:     rgba(96, 165, 250, 0.12);
+    --cs-danger:         #FF6B6B;
+    --cs-danger-muted:   rgba(255, 107, 107, 0.12);
+    --cs-info:           #1E88E5;
+    --cs-info-muted:     rgba(30, 136, 229, 0.12);
 
     /* ── Pipeline step accent colors ── */
-    --cs-step-record:    #F87171;
+    --cs-step-record:    #E03030;
     --cs-step-process:   #FBBF24;
-    --cs-step-review:    #60A5FA;
-    --cs-step-output:    #4ADE80;
+    --cs-step-review:    #1E88E5;
+    --cs-step-output:    #00C9A7;
 
     /* ── DOM diff colors ── */
     --cs-diff-added:     #4ADE80;
-    --cs-diff-removed:   #F87171;
+    --cs-diff-removed:   #FF6B6B;
     --cs-diff-changed:   #FBBF24;
-
   }
 
   html {
@@ -134,4 +150,47 @@
 
 .animate-cs-spin {
   animation: cs-spin 600ms linear infinite;
+}
+
+.animate-cs-fade-in {
+  animation: cs-fade-in 300ms ease-out;
+}
+
+/* Sidebar responsive margin */
+@media (min-width: 768px) {
+  .workspace-main-expanded { margin-left: 224px; }
+  .workspace-main-collapsed { margin-left: 64px; }
+}
+
+/* ── Shiki code block overrides ── */
+.cs-code-highlighted pre {
+  margin: 0;
+  background: transparent !important;
+  font-size: 13px;
+  line-height: 1.65;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.cs-code-highlighted code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cs-code-highlighted .line {
+  display: inline;
+}
+
+@keyframes cs-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cs-toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes cs-toast-exit {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
 }
