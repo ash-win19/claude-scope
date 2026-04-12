@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { saveRecordingBlob, deleteRecordingBlob } from '@/lib/recordingStorage';
+import type { ProcessingResponse } from '@/lib/api';
 
 export interface ARIANode {
   role: string;
@@ -58,6 +59,8 @@ interface SessionState {
   setPipelineStatus: (status: SessionState['pipelineStatus']) => void;
   setRecordingArtifact: (artifact: SessionState['recordingArtifact']) => void;
   clearRecordingArtifact: () => void;
+  processingResult: ProcessingResponse | null;
+  setProcessingResult: (result: ProcessingResponse | null) => void;
   cleanupRecording: () => void;
   reset: () => void;
 }
@@ -87,18 +90,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
   clearRecordingArtifact: () => set({ recordingArtifact: null }),
+  processingResult: null,
+  setProcessingResult: (result) => set({ processingResult: result }),
   cleanupRecording: () => {
     const sessionId = get().activeSessionId;
     if (sessionId) {
       deleteRecordingBlob(sessionId);
     }
-    set({ recordingArtifact: null, recordingContext: null, pipelineStatus: 'idle', activeSessionId: null });
+    set({ recordingArtifact: null, recordingContext: null, pipelineStatus: 'idle', activeSessionId: null, processingResult: null });
   },
   reset: () => {
     const sessionId = get().activeSessionId;
     if (sessionId) {
       deleteRecordingBlob(sessionId);
     }
-    set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null, recordingArtifact: null, pipelineStatus: 'idle' });
+    set({ isRecording: false, elapsedTime: 0, activeSessionId: null, processingStage: 0, processingPercent: 0, recordingContext: null, recordingArtifact: null, pipelineStatus: 'idle', processingResult: null });
   },
 }));

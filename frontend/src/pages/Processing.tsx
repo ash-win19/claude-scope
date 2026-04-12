@@ -7,7 +7,8 @@ import { CSProgressBar } from '@/components/ui/CSProgressBar';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { Film, Search, Zap, Check, ChevronDown } from 'lucide-react';
 import { useSessionStore } from '@/store/sessionStore';
-import { loadRecordingBlob } from '@/lib/recordingStorage';
+import { loadRecordingBlob, deleteRecordingBlob } from '@/lib/recordingStorage';
+import { recordings } from '@/lib/api';
 
 interface Stage {
   icon: React.ReactNode;
@@ -25,55 +26,83 @@ const stages: Stage[] = [
 const Processing: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { recordingArtifact, pipelineStatus, cleanupRecording } = useSessionStore();
+  const { recordingArtifact, cleanupRecording } = useSessionStore();
+  const recordingContext = useSessionStore((s) => s.recordingContext);
+  const setPipelineStatus = useSessionStore((s) => s.setPipelineStatus);
+  const setProcessingResult = useSessionStore((s) => s.setProcessingResult);
+  const activeSessionId = useSessionStore((s) => s.activeSessionId);
+
   const [activeStage, setActiveStage] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showLog, setShowLog] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const uploadAttempted = useRef(false);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          if (activeStage < 2) {
-            setActiveStage((s) => s + 1);
-            return 0;
-          } else {
-            clearInterval(interval);
-            setTimeout(() => navigate(`/app/record/${id}/review`), 500);
-            return 100;
-          }
-        }
-        return prev + Math.random() * 8 + 2;
+  const addLog = (msg: string) => setLogs((prev) => [...prev, msg]);
+
+  const handleUpload = async () => {
+    const artifact = recordingArtifact || (activeSessionId ? await loadRecordingBlob(activeSessionId) : null);
+    if (!artifact || !recordingContext) {
+      navigate('/app/record/new');
+      return;
+    }
+
+    setError(null);
+    setActiveStage(0);
+    setProgress(0);
+
+    const fileSizeMB = (artifact.blob.size / (1024 * 1024)).toFixed(2);
+    addLog(`Uploading recording (${fileSizeMB} MB)...`);
+    setPipelineStatus('uploading');
+
+    try {
+      setActiveStage(0);
+      setProgress(30);
+
+      const response = await recordings.upload(artifact.blob, {
+        title: recordingContext.title,
+        seedUrl: recordingContext.seedUrl,
+        notes: recordingContext.notes || undefined,
+        agentTarget: recordingContext.agentTarget,
       });
-    }, 300);
 
-    return () => clearInterval(interval);
-  }, [activeStage]);
+      addLog('Upload complete. Processing...');
+      setPipelineStatus('processing');
+      setActiveStage(1);
+      setProgress(60);
+
+      // Store result
+      setProcessingResult(response);
+
+      addLog(`Processing complete in ${response.processingMs}ms`);
+      setPipelineStatus('complete');
+      setActiveStage(2);
+      setProgress(100);
+
+      // Delete IndexedDB artifact (data is now on server)
+      if (activeSessionId) {
+        await deleteRecordingBlob(activeSessionId);
+      }
+
+      // Navigate to review with real session ID
+      setTimeout(() => {
+        navigate(`/app/record/${response.sessionId}/review`, { replace: true });
+      }, 800);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      addLog(`Error: ${message}`);
+      setError(message);
+      setPipelineStatus('error');
+    }
+  };
 
   useEffect(() => {
-    const logMessages = [
-      '[00:00] Starting frame extraction...',
-      '[00:01] Captured 12 unique states',
-      '[00:02] SSIM threshold: 0.92',
-      '[00:03] Frame deduplication complete',
-      '[00:05] Launching headless browser...',
-      '[00:06] Navigating to /dashboard',
-      '[00:08] ARIA snapshot captured',
-      '[00:09] Processing /dashboard/settings',
-      '[00:11] Building diff tree...',
-      '[00:12] 47 components mapped',
-      '[00:14] Analysis complete',
-    ];
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < logMessages.length) {
-        setLogs((prev) => [...prev, logMessages[i]]);
-        i++;
-      }
-    }, 800);
-    return () => clearInterval(interval);
+    if (!uploadAttempted.current) {
+      uploadAttempted.current = true;
+      handleUpload();
+    }
   }, []);
 
   useEffect(() => {
@@ -81,18 +110,6 @@ const Processing: React.FC = () => {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [logs]);
-
-  useEffect(() => {
-    if (!recordingArtifact && pipelineStatus === 'captured') {
-      loadRecordingBlob(id ?? '').then((result) => {
-        if (result) {
-          useSessionStore.getState().setRecordingArtifact(result);
-        } else {
-          navigate('/app/record/new');
-        }
-      });
-    }
-  }, []);
 
   return (
     <PipelineShell currentStep={1} maxWidth={580}>
@@ -181,6 +198,15 @@ const Processing: React.FC = () => {
           Cancel and discard →
         </CSButton>
       </div>
+
+      {error && (
+        <div className="mt-4 text-center">
+          <p className="text-sm mb-3" style={{ color: 'var(--cs-danger)' }}>{error}</p>
+          <CSButton variant="primary" size="md" onClick={handleUpload}>
+            Retry Upload
+          </CSButton>
+        </div>
+      )}
     </PipelineShell>
   );
 };

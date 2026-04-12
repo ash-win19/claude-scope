@@ -35,6 +35,7 @@ const RecordNew: React.FC = () => {
   const setRecordingContext = useSessionStore((s) => s.setRecordingContext);
   const setRecordingArtifact = useSessionStore((s) => s.setRecordingArtifact);
   const cleanupRecording = useSessionStore((s) => s.cleanupRecording);
+  const [captureId] = useState(() => `capture_${crypto.randomUUID().slice(0, 8)}`);
 
   const [title, setTitle] = useState('');
   const [seedUrl, setSeedUrl] = useState('');
@@ -89,6 +90,9 @@ const RecordNew: React.FC = () => {
       agentTarget,
     });
 
+    // Set captureId as active session for IndexedDB
+    useSessionStore.getState().startRecording(captureId);
+
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
       streamRef.current = stream;
@@ -118,7 +122,7 @@ const RecordNew: React.FC = () => {
         recorderRef.current = null;
         chunksRef.current = [];
 
-        navigate('/app/record/sess_01HX8Y/processing');
+        navigate(`/app/record/${captureId}/processing`);
       };
 
       // Handle user stopping share via browser UI

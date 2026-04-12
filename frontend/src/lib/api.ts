@@ -38,8 +38,9 @@ async function request<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const token = getToken();
+  const isFormData = options.body instanceof FormData;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...((options.headers as Record<string, string>) || {}),
   };
   if (token) {
@@ -174,6 +175,22 @@ export interface UpdateSettingsPayload {
   maxRecordingLength?: number;
 }
 
+// ── Processing response from backend ──
+export interface ProcessingResponse {
+  sessionId: string;
+  status: 'complete' | 'error';
+  title: string;
+  seedUrl: string;
+  agentTarget: string;
+  fileSize: number;
+  mimeType: string;
+  prompt: string;
+  frames: Frame[];
+  frameCount: number;
+  urlsInspected: string[];
+  processingMs: number;
+}
+
 // ── Auth API ──
 export const auth = {
   signup: (data: SignupPayload) =>
@@ -228,5 +245,19 @@ export const settings = {
     }),
 };
 
-// ── Recordings API (placeholder for future endpoints) ──
-export const recordings = {};
+// ── Recordings API ──
+export const recordings = {
+  upload: (file: Blob, meta: { title: string; seedUrl: string; notes?: string; agentTarget?: string }) => {
+    const formData = new FormData();
+    formData.append('file', file, 'recording.webm');
+    formData.append('title', meta.title);
+    formData.append('seedUrl', meta.seedUrl);
+    if (meta.notes) formData.append('notes', meta.notes);
+    if (meta.agentTarget) formData.append('agentTarget', meta.agentTarget);
+
+    return request<ProcessingResponse>('/recordings', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+};
