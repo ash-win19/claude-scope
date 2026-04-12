@@ -30,7 +30,7 @@ export const CSButton = React.forwardRef<HTMLButtonElement, CSButtonProps>(
 
     const variantClasses: Record<string, { base: string; focusRing: string }> = {
       primary: {
-        base: 'text-white',
+        base: '',
         focusRing: 'focus:ring-[var(--cs-accent)] focus:ring-offset-[var(--cs-bg-base)]',
       },
       secondary: {
@@ -57,6 +57,7 @@ export const CSButton = React.forwardRef<HTMLButtonElement, CSButtonProps>(
         style={{
           ...(variant === 'primary' ? {
             backgroundColor: 'var(--cs-accent)',
+            color: 'var(--cs-on-accent)',
           } : {}),
           ...(variant === 'ghost' ? {
             color: 'var(--cs-text-secondary)',
