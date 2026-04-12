@@ -5,6 +5,7 @@ import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSCodeBlock } from '@/components/ui/CSCodeBlock';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
+import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { useCSToast } from '@/components/ui/CSToast';
 import { useSessionStore } from '@/store/sessionStore';
 import { sessions as sessionsApi } from '@/lib/api';
@@ -100,7 +101,15 @@ const Output: React.FC = () => {
   if (loading) {
     return (
       <PipelineShell currentStep={3} maxWidth={900}>
-        <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Loading session data...</p>
+        <div>
+          <CSSkeleton width={250} height={28} className="mb-2" />
+          <CSSkeleton width={400} height={16} className="mb-6" />
+          <CSSkeleton height={300} radius={12} className="mb-4" />
+          <div className="grid grid-cols-2 gap-3">
+            <CSSkeleton height={80} radius={12} />
+            <CSSkeleton height={80} radius={12} />
+          </div>
+        </div>
       </PipelineShell>
     );
   }

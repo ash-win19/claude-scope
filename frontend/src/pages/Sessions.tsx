@@ -7,7 +7,7 @@ import { CSInput } from '@/components/ui/CSInput';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSSessionRow } from '@/components/ui/CSSessionRow';
 import { CSEmptyState } from '@/components/ui/CSEmptyState';
-import { CSSkeleton } from '@/components/ui/CSSkeleton';
+import { CSListSkeleton } from '@/components/ui/CSListSkeleton';
 import { Film, SlidersHorizontal, Search } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Session } from '@/lib/api';
@@ -119,9 +119,7 @@ const Sessions: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => <CSSkeleton key={i} height={64} radius={12} />)}
-        </div>
+        <CSListSkeleton rows={5} />
       ) : error ? (
         <CSCard padding="default">
           <p className="text-sm" style={{ color: 'var(--cs-danger)' }}>{error}</p>
