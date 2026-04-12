@@ -93,6 +93,24 @@ const Output: React.FC = () => {
   const [inlineAria, setInlineAria] = useState(true);
   const [includeRawDiff, setIncludeRawDiff] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
+  const [generatingPrompt, setGeneratingPrompt] = useState(false);
+
+  // Auto-generate prompt if not yet generated
+  useEffect(() => {
+    if (!session || loading || generatingPrompt) return;
+    if (session.promptStatus === 'not_started' || (!session.prompt && session.promptStatus !== 'error' && session.promptStatus !== 'generating')) {
+      setGeneratingPrompt(true);
+      sessionsApi.generatePrompt(id!).then((result) => {
+        if (result.promptStatus === 'complete' && result.prompt) {
+          setSession((prev) => prev ? { ...prev, prompt: result.prompt!, promptStatus: 'complete' } : prev);
+        }
+      }).catch(() => {
+        setSession((prev) => prev ? { ...prev, promptStatus: 'error', promptError: 'Auto-generation failed' } : prev);
+      }).finally(() => {
+        setGeneratingPrompt(false);
+      });
+    }
+  }, [session?.id, loading]);
 
   const handleSave = () => {
     showToast('Session saved successfully', 'success');
@@ -157,29 +175,33 @@ const Output: React.FC = () => {
           showLineNumbers
           copyable
         />
-      ) : session?.promptStatus === 'generating' ? (
+      ) : generatingPrompt || session?.promptStatus === 'generating' ? (
         <div className="py-12 text-center">
+          <div className="inline-block w-6 h-6 border-2 rounded-full animate-spin mb-3" style={{ borderColor: 'var(--cs-border-subtle)', borderTopColor: 'var(--cs-accent)' }} />
           <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Generating prompt...</p>
         </div>
-      ) : (
+      ) : session?.promptStatus === 'error' ? (
         <div className="py-12 text-center">
           <p className="text-sm mb-4" style={{ color: 'var(--cs-text-muted)' }}>
-            {session?.promptStatus === 'error' ? `Generation failed: ${session?.promptError ?? 'Unknown error'}` : 'Prompt has not been generated yet.'}
+            Generation failed: {session?.promptError ?? 'Unknown error'}
           </p>
           <CSButton variant="primary" size="md" onClick={async () => {
+            setGeneratingPrompt(true);
             try {
               const result = await sessionsApi.generatePrompt(id!);
               if (result.promptStatus === 'complete' && result.prompt) {
                 setSession((prev) => prev ? { ...prev, prompt: result.prompt!, promptStatus: 'complete' } : prev);
               }
             } catch {
-              // Handle error
+              setSession((prev) => prev ? { ...prev, promptStatus: 'error', promptError: 'Retry failed' } : prev);
+            } finally {
+              setGeneratingPrompt(false);
             }
           }}>
-            {session?.promptStatus === 'error' ? 'Retry Generation' : 'Generate Prompt'}
+            Retry Generation
           </CSButton>
         </div>
-      )}
+      ) : null}
 
       {/* Output options */}
       <div className="flex gap-4 mt-4 flex-wrap">
