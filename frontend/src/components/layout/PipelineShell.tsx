@@ -57,7 +57,7 @@ export const PipelineShell: React.FC<PipelineShellProps> = ({
           {rightAction}
         </div>
       </nav>
-      <main className="mx-auto py-10 px-6" style={{ maxWidth }}>
+      <main className="mx-auto w-full py-10 px-6 sm:px-8 lg:px-10" style={{ maxWidth }}>
         {children}
       </main>
     </div>

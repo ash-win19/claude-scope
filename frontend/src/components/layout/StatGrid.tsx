@@ -15,8 +15,14 @@ interface StatGridProps {
   columns?: 2 | 3 | 4;
 }
 
+const columnClasses: Record<number, string> = {
+  2: 'grid-cols-2',
+  3: 'grid-cols-2 sm:grid-cols-3',
+  4: 'grid-cols-2 md:grid-cols-4',
+};
+
 export const StatGrid: React.FC<StatGridProps> = ({ stats, loading, columns = 4 }) => (
-  <div className={`grid grid-cols-2 sm:grid-cols-${columns} gap-3 mb-10`}>
+  <div className={`grid ${columnClasses[columns] ?? 'grid-cols-2 md:grid-cols-4'} gap-4 mb-10`}>
     {stats.map((stat) => (
       <CSCard key={stat.label} padding="compact">
         {stat.icon && (

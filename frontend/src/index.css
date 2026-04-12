@@ -156,10 +156,16 @@
   animation: cs-fade-in 300ms ease-out;
 }
 
-/* Sidebar responsive margin */
+/* Sidebar responsive margin — applied to the outer wrapper so inner content can center via mx-auto */
 @media (min-width: 768px) {
   .workspace-main-expanded { margin-left: 224px; }
   .workspace-main-collapsed { margin-left: 64px; }
+}
+
+/* On mobile, leave room for the hamburger menu button */
+@media (max-width: 767px) {
+  .workspace-main-expanded,
+  .workspace-main-collapsed { padding-top: 3.5rem; }
 }
 
 /* ── Shiki code block overrides ── */
