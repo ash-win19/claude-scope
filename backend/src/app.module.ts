@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SettingsModule } from './settings/settings.module';
 import { RecordingsModule } from './recordings/recordings.module';
+import { CredentialsModule } from './credentials/credentials.module';
+import { AssetsModule } from './assets/assets.module';
 import { HealthController } from './health.controller';
 import { validateConfig } from './config/configuration';
 
@@ -16,6 +18,8 @@ import { validateConfig } from './config/configuration';
     SessionsModule,
     SettingsModule,
     RecordingsModule,
+    CredentialsModule,
+    AssetsModule,
   ],
   controllers: [HealthController],
 })
