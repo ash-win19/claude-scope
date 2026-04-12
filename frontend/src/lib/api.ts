@@ -1,6 +1,12 @@
 // ── Constants ──
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
+export function resolveAssetUrl(path: string): string {
+  if (path.startsWith('data:')) return path;
+  const origin = BASE_URL.replace(/\/api$/, '');
+  return `${origin}${path}`;
+}
+
 // ── Error class ──
 export class ApiError extends Error {
   constructor(
@@ -172,8 +178,23 @@ export interface SessionStatusResponse {
   lastError: string | null;
 }
 
+export interface SessionAnalysis {
+  id: string;
+  sessionId: string;
+  timelineJson: unknown | null;
+  inspectionJson: InspectionSummary | null;
+  visionSuccessCount: number;
+  totalFrames: number;
+  analysisVersion: number;
+  promptStatus: string;
+  promptError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SessionWithFrames extends Session {
   frames: Frame[];
+  analysis?: SessionAnalysis | null;
 }
 
 export interface SessionStats {
@@ -189,6 +210,29 @@ export interface Settings {
   inlineAriaTree: boolean;
   includeRawDiff: boolean;
   maxRecordingLength: number;
+}
+
+// ── Credential types ──
+export interface Credential {
+  id: string;
+  provider: string;
+  label: string;
+  maskedKey: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCredentialPayload {
+  provider: string;
+  label: string;
+  apiKey: string;
+}
+
+export interface UpdateCredentialPayload {
+  label?: string;
+  apiKey?: string;
+  isActive?: boolean;
 }
 
 // ── Request payload types ──
@@ -304,6 +348,25 @@ export const sessions = {
     }),
 
   status: (id: string) => request<SessionStatusResponse>(`/sessions/${id}/status`),
+};
+
+// ── Credentials API ──
+export const credentials = {
+  list: () => request<Credential[]>('/credentials'),
+  create: (data: CreateCredentialPayload) =>
+    request<Credential>('/credentials', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: UpdateCredentialPayload) =>
+    request<Credential>(`/credentials/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    request<void>(`/credentials/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // ── Settings API ──

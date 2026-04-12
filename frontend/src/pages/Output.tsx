@@ -79,7 +79,7 @@ const Output: React.FC = () => {
       try {
         const data = await sessionsApi.get(id!);
         setSession(data);
-        setInspection(data.inspectionJson ?? null);
+        setInspection(data.analysis?.inspectionJson ?? data.inspectionJson ?? null);
       } catch {
         navigate('/workspace');
       } finally {

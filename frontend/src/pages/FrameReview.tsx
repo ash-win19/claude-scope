@@ -7,7 +7,7 @@ import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { useSessionStore } from '@/store/sessionStore';
 import { formatMs } from '@/lib/utils';
-import { sessions as sessionsApi } from '@/lib/api';
+import { sessions as sessionsApi, resolveAssetUrl } from '@/lib/api';
 import type { Frame, InspectionSummary } from '@/lib/api';
 import { ARIATree } from '@/components/pipeline/ARIATree';
 import { X } from 'lucide-react';
@@ -152,7 +152,7 @@ const FrameReview: React.FC = () => {
       try {
         const data = await sessionsApi.get(id!);
         setFrames(data.frames);
-        setInspection(data.inspectionJson ?? null);
+        setInspection(data.analysis?.inspectionJson ?? data.inspectionJson ?? null);
       } catch {
         navigate('/workspace');
       } finally {
@@ -247,7 +247,7 @@ const FrameReview: React.FC = () => {
                   key={frame.id}
                   className="relative shrink-0 w-24 h-16 rounded cursor-pointer bg-cover bg-center transition-all duration-150"
                   style={{
-                    backgroundImage: `url(${frame.thumbnailUrl})`,
+                    backgroundImage: `url(${resolveAssetUrl(frame.thumbnailUrl)})`,
                     backgroundColor: 'var(--cs-bg-overlay)',
                     border: i === selectedFrameIndex
                       ? '2px solid var(--cs-accent-border)'
@@ -289,7 +289,7 @@ const FrameReview: React.FC = () => {
                 style={{ borderColor: 'var(--cs-border-subtle)' }}
               >
                 <img
-                  src={selectedFrame.thumbnailUrl}
+                  src={resolveAssetUrl(selectedFrame.thumbnailUrl)}
                   alt={`Frame at ${formatMs(selectedFrame.timestamp)}`}
                   className="w-full object-contain"
                   style={{ backgroundColor: 'var(--cs-bg-overlay)', maxHeight: 400 }}

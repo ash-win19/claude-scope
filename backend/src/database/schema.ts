@@ -53,7 +53,9 @@ export const sessions = pgTable('sessions', {
   seedUrl: text('seed_url').notNull().default(''),
   notes: text('notes'),
   lastError: text('last_error'),
+  /** @deprecated Use sessionAnalysis.inspectionJson instead */
   inspectionJson: jsonb('inspection_json').$type<InspectionResultJson | null>().default(null),
+  /** @deprecated Use sessionAnalysis.inspectionJson.durationMs instead */
   inspectionDurationMs: integer('inspection_duration_ms'),
   analysis: jsonb('analysis').$type<AnalysisJson | null>().default(null),
   promptStatus: varchar('prompt_status', { length: 20 }).notNull().default('not_started'),
@@ -114,6 +116,64 @@ export const userSettings = pgTable('user_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
+});
+
+export interface RecordingTimelineJson {
+  summary: string;
+  durationMs: number;
+  frameCount: number;
+  failedFrames: number;
+  events: Array<{
+    timestampMs: number;
+    frameId: string;
+    type: string;
+    summary: string;
+    elements: Array<{ type: string; label: string; state?: string }>;
+  }>;
+}
+
+export const userModelCredentials = pgTable('user_model_credentials', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  provider: varchar('provider', { length: 50 }).notNull(),
+  label: varchar('label', { length: 255 }).notNull(),
+  encryptedApiKey: text('encrypted_api_key').notNull(),
+  isActive: integer('is_active').notNull().default(1),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sessionAnalysis = pgTable('session_analysis', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  sessionId: varchar('session_id', { length: 36 })
+    .notNull()
+    .unique()
+    .references(() => sessions.id, { onDelete: 'cascade' }),
+  timelineJson: jsonb('timeline_json').$type<RecordingTimelineJson | null>().default(null),
+  inspectionJson: jsonb('inspection_json').$type<InspectionResultJson | null>().default(null),
+  visionSuccessCount: integer('vision_success_count').notNull().default(0),
+  totalFrames: integer('total_frames').notNull().default(0),
+  analysisVersion: integer('analysis_version').notNull().default(1),
+  promptStatus: varchar('prompt_status', { length: 50 }).notNull().default('pending'),
+  promptError: text('prompt_error'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sessionAssets = pgTable('session_assets', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  sessionId: varchar('session_id', { length: 36 })
+    .notNull()
+    .references(() => sessions.id, { onDelete: 'cascade' }),
+  frameId: varchar('frame_id', { length: 36 })
+    .references(() => frames.id, { onDelete: 'set null' }),
+  kind: varchar('kind', { length: 50 }).notNull(),
+  storageKey: text('storage_key').notNull(),
+  mimeType: varchar('mime_type', { length: 100 }).notNull(),
+  byteSize: integer('byte_size').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export interface InspectionResultJson {

@@ -3,7 +3,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
-import { sessions, frames, type ProcessingStatusJson } from '../database/schema';
+import { sessions, frames, sessionAnalysis, type ProcessingStatusJson } from '../database/schema';
+import { AssetsService } from '../assets/assets.service';
 import { eq } from 'drizzle-orm';
 import { UploadRecordingDto } from './dto/upload-recording.dto';
 import { ProcessingResponse, ProcessedFrame } from './types/processing-response';
@@ -22,6 +23,7 @@ export class RecordingsService {
     private readonly vision: VisionService,
     private readonly visionTimeline: VisionTimelineService,
     private readonly playwright: PlaywrightService,
+    private readonly assetsService: AssetsService,
   ) {}
 
   async processUpload(
@@ -104,6 +106,19 @@ export class RecordingsService {
       this.logger.log(`[${sessionId}] Building timeline...`);
       const timeline = this.visionTimeline.buildTimeline(visionResults);
 
+      // 8b. Create session_analysis record (dual-write)
+      const analysisId = this.generateId('sa');
+      await this.db.insert(sessionAnalysis).values({
+        id: analysisId,
+        sessionId,
+        timelineJson: timeline,
+        inspectionJson: inspectionResult,
+        visionSuccessCount: successCount,
+        totalFrames: visionResults.length,
+        analysisVersion: 1,
+        promptStatus: 'pending',
+      });
+
       // 9. Skip prompt synthesis (deferred to generate-prompt endpoint — CAP-76)
       await this.updateStatus(sessionId, {
         overallStage: 'persisting',
@@ -119,10 +134,10 @@ export class RecordingsService {
         const analysis = visionResults[i];
         const frameId = this.generateId('frm');
 
-        // Read frame file as base64 data URL for thumbnailUrl
+        // Store frame as asset and use API URL for thumbnailUrl
         const frameBuffer = fs.readFileSync(ef.filePath);
-        const base64 = frameBuffer.toString('base64');
-        const thumbnailUrl = `data:image/png;base64,${base64}`;
+        const asset = await this.assetsService.createAsset(sessionId, frameId, 'thumbnail', frameBuffer, 'image/png');
+        const thumbnailUrl = `/api/assets/${asset.id}`;
 
         // Convert vision elements to ARIANodeJson shape
         const ariaTree = analysis && analysis.success
@@ -226,6 +241,12 @@ export class RecordingsService {
       this.logger.log(`[${sessionId}] Processing complete in ${processingMs}ms`);
       await this.updateStatus(sessionId, { overallStage: 'complete' });
 
+      // Update session_analysis prompt status
+      await this.db.update(sessionAnalysis).set({
+        promptStatus: 'complete',
+        updatedAt: new Date(),
+      }).where(eq(sessionAnalysis.sessionId, sessionId));
+
       // 12. Return full response
       return {
         sessionId,
@@ -285,6 +306,15 @@ export class RecordingsService {
       }
 
       await this.updateStatus(sessionId, errorUpdate);
+
+      // Best effort - don't let this fail the error handler
+      try {
+        await this.db.update(sessionAnalysis).set({
+          promptStatus: 'error',
+          promptError: message,
+          updatedAt: new Date(),
+        }).where(eq(sessionAnalysis.sessionId, sessionId));
+      } catch {}
 
       throw new InternalServerErrorException({
         sessionId,

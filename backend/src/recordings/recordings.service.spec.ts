@@ -6,6 +6,8 @@ import { FrameExtractionService } from './frame-extraction.service';
 import { VisionService } from './vision.service';
 import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
+import { SynthesisService } from './synthesis.service';
+import { AssetsService } from '../assets/assets.service';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
@@ -20,10 +22,15 @@ const mockInsertValues = jest.fn().mockReturnValue({ returning: mockInsertReturn
 const mockInsert = jest.fn().mockReturnValue({ values: mockInsertValues });
 const mockUpdateSet = jest.fn().mockReturnValue({ where: jest.fn() });
 const mockUpdate = jest.fn().mockReturnValue({ set: mockUpdateSet });
+const mockSelectLimit = jest.fn().mockResolvedValue([{ processingStatus: null }]);
+const mockSelectWhere = jest.fn().mockReturnValue({ limit: mockSelectLimit });
+const mockSelectFrom = jest.fn().mockReturnValue({ where: mockSelectWhere });
+const mockSelect = jest.fn().mockReturnValue({ from: mockSelectFrom });
 
 const mockDb = {
   insert: mockInsert,
   update: mockUpdate,
+  select: mockSelect,
 };
 
 function createMocks() {
@@ -66,7 +73,24 @@ function createMocks() {
     }),
   };
 
-  return { mockFrameExtraction, mockVision, mockTimeline, mockPlaywright };
+  const mockSynthesis = {
+    synthesize: jest.fn().mockReturnValue({
+      prompt: '# Test Prompt',
+      summary: 'Test summary',
+      urlsInspected: ['https://example.com'],
+    }),
+  };
+
+  const mockAssetsService = {
+    createAsset: jest.fn().mockResolvedValue({
+      id: 'ast_test0001',
+      storageKey: 'test/ast_test0001.png',
+      mimeType: 'image/png',
+      byteSize: 1024,
+    }),
+  };
+
+  return { mockFrameExtraction, mockVision, mockTimeline, mockPlaywright, mockSynthesis, mockAssetsService };
 }
 
 const mockFile = {
@@ -110,6 +134,8 @@ describe('RecordingsService', () => {
         { provide: VisionService, useValue: mocks.mockVision },
         { provide: VisionTimelineService, useValue: mocks.mockTimeline },
         { provide: PlaywrightService, useValue: mocks.mockPlaywright },
+        { provide: SynthesisService, useValue: mocks.mockSynthesis },
+        { provide: AssetsService, useValue: mocks.mockAssetsService },
       ],
     }).compile();
 
@@ -137,8 +163,9 @@ describe('RecordingsService', () => {
 
     // Verify session was updated to 'error'
     expect(mockUpdate).toHaveBeenCalled();
-    const setArg = mockUpdateSet.mock.calls[0][0];
-    expect(setArg.status).toBe('error');
+    const errorCall = mockUpdateSet.mock.calls.find((c: any[]) => c[0]?.status === 'error');
+    expect(errorCall).toBeDefined();
+    expect(errorCall![0].status).toBe('error');
   });
 
   it('should throw when Vision is unavailable', async () => {
@@ -155,8 +182,9 @@ describe('RecordingsService', () => {
       .rejects.toThrow(InternalServerErrorException);
 
     // Verify the error message was propagated to the session
-    const setArg = mockUpdateSet.mock.calls[0][0];
-    expect(setArg.lastError).toContain('browser crashed');
+    const errorCall = mockUpdateSet.mock.calls.find((c: any[]) => c[0]?.lastError);
+    expect(errorCall).toBeDefined();
+    expect(errorCall![0].lastError).toContain('browser crashed');
   });
 
   it('should throw when all vision frames fail', async () => {
@@ -168,8 +196,9 @@ describe('RecordingsService', () => {
     await expect(service.processUpload('user_1', mockFile, mockDto))
       .rejects.toThrow(InternalServerErrorException);
 
-    const setArg = mockUpdateSet.mock.calls[0][0];
-    expect(setArg.lastError).toContain('Vision analysis failed for all');
+    const errorCall = mockUpdateSet.mock.calls.find((c: any[]) => c[0]?.lastError?.includes('Vision analysis failed'));
+    expect(errorCall).toBeDefined();
+    expect(errorCall![0].lastError).toContain('Vision analysis failed for all');
   });
 
   it('should succeed with partial vision frame failures', async () => {
