@@ -14,15 +14,12 @@ import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { Trash2, RefreshCw } from 'lucide-react';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
-const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
-
 const SessionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useCSToast();
   const [session, setSession] = useState<SessionWithFrames | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeAgent, setActiveAgent] = useState(0);
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -145,24 +142,13 @@ const SessionDetail: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left — prompt */}
         <div className="lg:col-span-3">
-          {/* Agent tabs */}
-          <div className="flex border-b mb-4" style={{ borderColor: 'var(--cs-border-subtle)' }}>
-            {AGENTS.map((agent, i) => (
-              <button
-                key={agent}
-                onClick={() => setActiveAgent(i)}
-                className="px-4 py-2 text-sm transition-colors duration-150"
-                style={{
-                  color: activeAgent === i ? 'var(--cs-text-primary)' : 'var(--cs-text-muted)',
-                  borderBottom: activeAgent === i ? '2px solid var(--cs-accent)' : '2px solid transparent',
-                }}
-              >
-                {agent}
-              </button>
-            ))}
-          </div>
-
-          <CSCodeBlock content={session.prompt} showLineNumbers copyable />
+          <CSCodeBlock
+            content={session.prompt}
+            language="markdown"
+            filename="system-prompt.md"
+            showLineNumbers
+            copyable
+          />
 
           <CSButton variant="ghost" size="sm" className="mt-3" iconLeft={<RefreshCw size={14} />}>
             Regenerate prompt

@@ -59,7 +59,7 @@ export const router = createBrowserRouter([
   { path: '/workspace/record/new', element: wrapAuth(RecordNew) },
   { path: '/workspace/record/:id/processing', element: wrapAuth(Processing) },
   { path: '/workspace/record/:id/review', element: wrapAuth(FrameReview) },
-  { path: '/workspace/record/:id/output', element: wrapAuth(Output) },
+  { path: '/workspace/record/:id/prompt', element: wrapAuth(Output) },
   { path: '/workspace/integrations', element: wrapAuth(Integrations) },
   { path: '/workspace/model-access', element: wrapAuth(ModelAccess) },
 

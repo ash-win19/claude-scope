@@ -161,3 +161,36 @@
   .workspace-main-expanded { margin-left: 224px; }
   .workspace-main-collapsed { margin-left: 64px; }
 }
+
+/* ── Shiki code block overrides ── */
+.cs-code-highlighted pre {
+  margin: 0;
+  background: transparent !important;
+  font-size: 13px;
+  line-height: 1.65;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.cs-code-highlighted code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cs-code-highlighted .line {
+  display: inline;
+}
+
+@keyframes cs-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cs-toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes cs-toast-exit {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
