@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSInput } from '@/components/ui/CSInput';
 import { CSButton } from '@/components/ui/CSButton';
@@ -30,10 +31,7 @@ const ModelAccess: React.FC = () => {
 
   return (
     <WorkspaceShell maxWidth={720}>
-      <h1 className="text-[28px] font-semibold mb-2" style={{ color: 'var(--cs-text-primary)' }}>Model Access</h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--cs-text-secondary)' }}>
-        Configure API keys and select which provider and model to use for vision analysis.
-      </p>
+      <PageHeader title="Model Access" subtitle="Configure API keys and select which provider and model to use for vision analysis." />
 
       <div className="flex flex-col gap-4">
         {PROVIDERS.map((provider) => {
