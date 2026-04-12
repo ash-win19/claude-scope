@@ -194,6 +194,16 @@ const FrameReview: React.FC = () => {
     <PipelineShell
       currentStep={2}
       maxWidth={1100}
+      rightAction={
+        <CSButton
+          variant="primary"
+          size="md"
+          disabled={frames.length === 0}
+          onClick={() => navigate(`/workspace/record/${id}/prompt`)}
+        >
+          Generate Prompt →
+        </CSButton>
+      }
     >
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left panel — 60% */}

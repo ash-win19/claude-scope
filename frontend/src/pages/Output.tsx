@@ -14,8 +14,6 @@ import { formatDuration, formatTimestamp, formatMsReadable } from '@/lib/utils';
 import { ArrowLeft, Plus, ChevronDown } from 'lucide-react';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
-const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
-
 const InspectionBrief: React.FC<{ inspection: InspectionSummary | null | undefined }> = ({ inspection }) => {
   if (!inspection) {
     return (
@@ -49,7 +47,7 @@ const Output: React.FC = () => {
   const [session, setSession] = useState<SessionWithFrames | null>(null);
   const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
-  useDocumentTitle('Output');
+  useDocumentTitle('Prompt');
 
   useEffect(() => {
     async function loadSession() {
@@ -87,14 +85,13 @@ const Output: React.FC = () => {
     loadSession();
   }, [id]);
 
-  const [activeAgent, setActiveAgent] = useState(0);
   const [includeScreenshots, setIncludeScreenshots] = useState(true);
   const [inlineAria, setInlineAria] = useState(true);
   const [includeRawDiff, setIncludeRawDiff] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
 
   const handleSave = () => {
-    showToast('Session saved ✓', 'success');
+    showToast('Session saved successfully', 'success');
     navigate(`/workspace/sessions/${id}`);
   };
 
@@ -131,24 +128,13 @@ const Output: React.FC = () => {
         Built from visual analysis and structural inspection. Copy into any AI coding agent.
       </p>
 
-      {/* Agent tabs */}
-      <div className="flex border-b mb-4" style={{ borderColor: 'var(--cs-border-subtle)' }}>
-        {AGENTS.map((agent, i) => (
-          <button
-            key={agent}
-            onClick={() => setActiveAgent(i)}
-            className="px-4 py-2 text-sm transition-colors duration-150"
-            style={{
-              color: activeAgent === i ? 'var(--cs-text-primary)' : 'var(--cs-text-muted)',
-              borderBottom: activeAgent === i ? '2px solid var(--cs-accent)' : '2px solid transparent',
-            }}
-          >
-            {agent}
-          </button>
-        ))}
-      </div>
-
-      <CSCodeBlock content={session?.prompt || '# No prompt generated'} showLineNumbers copyable />
+      <CSCodeBlock
+        content={session?.prompt || '# No prompt generated'}
+        language="markdown"
+        filename="system-prompt.md"
+        showLineNumbers
+        copyable
+      />
 
       {/* Output options */}
       <div className="flex gap-4 mt-4 flex-wrap">
