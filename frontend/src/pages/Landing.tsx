@@ -29,6 +29,7 @@ const Landing: React.FC = () => {
             <a href="#how-it-works" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>How it works</a>
             <a href="#pricing" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Pricing</a>
             <a href="#faq" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>FAQ</a>
+            <a href="https://claudescope.mintlify.app/" target="_blank" rel="noopener noreferrer" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Docs</a>
           </nav>
           <div className="flex items-center gap-2">
             <CSButton variant="ghost" size="sm" onClick={handleLogin}>Sign in</CSButton>
