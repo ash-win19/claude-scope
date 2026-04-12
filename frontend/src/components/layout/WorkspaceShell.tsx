@@ -13,12 +13,16 @@ export const WorkspaceShell: React.FC<WorkspaceShellProps> = ({ children, maxWid
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
       <WorkspaceSidebar />
-      <main
-        className={`py-10 px-8 transition-[margin-left] duration-200 ${collapsed ? 'workspace-main-collapsed' : 'workspace-main-expanded'}`}
-        style={{ maxWidth: maxWidth + 64 }}
+      <div
+        className={`transition-[margin-left] duration-200 ${collapsed ? 'workspace-main-collapsed' : 'workspace-main-expanded'}`}
       >
-        {children}
-      </main>
+        <main
+          className="mx-auto w-full py-10 px-6 sm:px-8 lg:px-10"
+          style={{ maxWidth: maxWidth + 80 }}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 };

@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
       />
 
       {/* Quick actions row */}
-      <div className="grid grid-cols-3 gap-3 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         {[
           { label: 'Record', desc: 'Capture a new session', icon: <Film size={20} />, onClick: () => navigate('/workspace/record/new') },
           { label: 'Sessions', desc: 'Browse all recordings', icon: <FolderOpen size={20} />, onClick: () => navigate('/workspace/sessions') },
