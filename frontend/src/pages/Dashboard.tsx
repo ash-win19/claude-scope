@@ -11,13 +11,23 @@ import { Film, Plus } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Session, SessionStats } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
+
+function getFirstName(fullName: string | undefined): string | null {
+  if (!fullName) return null;
+  const trimmed = fullName.trim();
+  if (!trimmed) return null;
+  return trimmed.split(/\s+/)[0];
+}
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
   const [sessionList, setSessionList] = useState<Session[]>([]);
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const firstName = getFirstName(user?.name);
 
   useEffect(() => {
     async function load() {
@@ -41,7 +51,9 @@ const Dashboard: React.FC = () => {
     <AppShell>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-[28px] font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Dashboard</h1>
+        <h1 className="text-[28px] font-semibold" style={{ color: 'var(--cs-text-primary)' }}>
+          {firstName ? `Hey ${firstName}` : 'Dashboard'}
+        </h1>
         <CSButton variant="primary" size="md" iconLeft={<Plus size={16} />} onClick={() => navigate('/app/record/new')}>
           New Recording
         </CSButton>
