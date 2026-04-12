@@ -5,6 +5,7 @@ import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSCodeBlock } from '@/components/ui/CSCodeBlock';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
+import { CSSkeleton } from '@/components/ui/CSSkeleton';
 import { useCSToast } from '@/components/ui/CSToast';
 import { useSessionStore } from '@/store/sessionStore';
 import { sessions as sessionsApi } from '@/lib/api';
@@ -12,8 +13,6 @@ import type { SessionWithFrames, InspectionSummary } from '@/lib/api';
 import { formatDuration, formatTimestamp, formatMsReadable } from '@/lib/utils';
 import { ArrowLeft, Plus, ChevronDown } from 'lucide-react';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
-
-const AGENTS = ['Claude Code', 'Codex', 'Cursor', 'Raw'] as const;
 
 const InspectionBrief: React.FC<{ inspection: InspectionSummary | null | undefined }> = ({ inspection }) => {
   if (!inspection) {
@@ -48,7 +47,7 @@ const Output: React.FC = () => {
   const [session, setSession] = useState<SessionWithFrames | null>(null);
   const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState<InspectionSummary | null>(null);
-  useDocumentTitle('Output');
+  useDocumentTitle('Prompt');
 
   useEffect(() => {
     async function loadSession() {
@@ -86,21 +85,28 @@ const Output: React.FC = () => {
     loadSession();
   }, [id]);
 
-  const [activeAgent, setActiveAgent] = useState(0);
   const [includeScreenshots, setIncludeScreenshots] = useState(true);
   const [inlineAria, setInlineAria] = useState(true);
   const [includeRawDiff, setIncludeRawDiff] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
 
   const handleSave = () => {
-    showToast('Session saved ✓', 'success');
+    showToast('Session saved successfully', 'success');
     navigate(`/workspace/sessions/${id}`);
   };
 
   if (loading) {
     return (
       <PipelineShell currentStep={3} maxWidth={900}>
-        <p className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Loading session data...</p>
+        <div>
+          <CSSkeleton width={250} height={28} className="mb-2" />
+          <CSSkeleton width={400} height={16} className="mb-6" />
+          <CSSkeleton height={300} radius={12} className="mb-4" />
+          <div className="grid grid-cols-2 gap-3">
+            <CSSkeleton height={80} radius={12} />
+            <CSSkeleton height={80} radius={12} />
+          </div>
+        </div>
       </PipelineShell>
     );
   }
@@ -122,24 +128,13 @@ const Output: React.FC = () => {
         Built from visual analysis and structural inspection. Copy into any AI coding agent.
       </p>
 
-      {/* Agent tabs */}
-      <div className="flex border-b mb-4" style={{ borderColor: 'var(--cs-border-subtle)' }}>
-        {AGENTS.map((agent, i) => (
-          <button
-            key={agent}
-            onClick={() => setActiveAgent(i)}
-            className="px-4 py-2 text-sm transition-colors duration-150"
-            style={{
-              color: activeAgent === i ? 'var(--cs-text-primary)' : 'var(--cs-text-muted)',
-              borderBottom: activeAgent === i ? '2px solid var(--cs-accent)' : '2px solid transparent',
-            }}
-          >
-            {agent}
-          </button>
-        ))}
-      </div>
-
-      <CSCodeBlock content={session?.prompt || '# No prompt generated'} showLineNumbers copyable />
+      <CSCodeBlock
+        content={session?.prompt || '# No prompt generated'}
+        language="markdown"
+        filename="system-prompt.md"
+        showLineNumbers
+        copyable
+      />
 
       {/* Output options */}
       <div className="flex gap-4 mt-4 flex-wrap">

@@ -8,7 +8,7 @@ const PIPELINE_STEPS = [
   { label: 'Record', color: 'var(--cs-step-record)' },
   { label: 'Analyze', color: 'var(--cs-step-process)' },
   { label: 'Review', color: 'var(--cs-step-review)' },
-  { label: 'Output', color: 'var(--cs-step-output)' },
+  { label: 'Prompt', color: 'var(--cs-step-output)' },
 ];
 
 interface PipelineShellProps {

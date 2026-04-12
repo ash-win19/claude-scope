@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkspaceShell } from '@/components/layout/WorkspaceShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { StatGrid } from '@/components/layout/StatGrid';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
-import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
 import { CSSessionRow } from '@/components/ui/CSSessionRow';
 import { CSEmptyState } from '@/components/ui/CSEmptyState';
-import { CSSkeleton } from '@/components/ui/CSSkeleton';
-import { Film, Plus, FolderOpen, Settings, Clock, CheckCircle2, Zap, Timer } from 'lucide-react';
+import { CSPageSkeleton } from '@/components/ui/CSPageSkeleton';
+import { Film, Plus, FolderOpen, Settings, CheckCircle2, Zap, Timer } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
 import type { Session, SessionStats } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
@@ -49,44 +50,33 @@ const Dashboard: React.FC = () => {
     load();
   }, []);
 
+  if (loading) {
+    return (
+      <WorkspaceShell>
+        <CSPageSkeleton showStats rows={3} />
+      </WorkspaceShell>
+    );
+  }
+
   return (
     <WorkspaceShell>
       {/* Header + Quick actions */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-[28px] font-semibold" style={{ color: 'var(--cs-text-primary)' }}>
-            {firstName ? `Hey ${firstName}` : 'Dashboard'}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--cs-text-secondary)' }}>
-            Your workspace overview
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <CSButton variant="primary" size="md" iconLeft={<Plus size={16} />} onClick={() => navigate('/workspace/record/new')}>
-            New Recording
-          </CSButton>
-        </div>
-      </div>
+      <PageHeader title={firstName ? `Hey ${firstName}` : 'Dashboard'} subtitle="Your workspace overview">
+        <CSButton variant="primary" size="md" iconLeft={<Plus size={16} />} onClick={() => navigate('/workspace/record/new')}>
+          New Recording
+        </CSButton>
+      </PageHeader>
 
       {/* Stats grid — 4 cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-        {[
+      <StatGrid
+        loading={loading}
+        stats={[
           { icon: <FolderOpen size={16} />, label: 'TOTAL SESSIONS', value: stats?.totalSessions ?? 0 },
           { icon: <CheckCircle2 size={16} />, label: 'COMPLETED', value: stats?.completedSessions ?? 0 },
           { icon: <Zap size={16} />, label: 'AVG PROCESSING', value: `${((stats?.avgProcessingTime ?? 0) / 1000).toFixed(1)}s` },
           { icon: <Timer size={16} />, label: 'TOTAL DURATION', value: formatDuration(stats?.totalDuration ?? 0) },
-        ].map((stat) => (
-          <CSCard key={stat.label} padding="compact">
-            <div className="flex items-center gap-2 mb-1">
-              <span style={{ color: 'var(--cs-text-muted)' }}>{stat.icon}</span>
-              <CSMonoLabel>{stat.label}</CSMonoLabel>
-            </div>
-            <div className="text-2xl font-semibold" style={{ color: 'var(--cs-text-primary)' }}>
-              {loading ? <CSSkeleton width={50} height={28} /> : stat.value}
-            </div>
-          </CSCard>
-        ))}
-      </div>
+        ]}
+      />
 
       {/* Quick actions row */}
       <div className="grid grid-cols-3 gap-3 mb-10">
@@ -117,11 +107,7 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => <CSSkeleton key={i} height={64} radius={12} />)}
-        </div>
-      ) : error ? (
+      {error ? (
         <CSCard padding="default">
           <p className="text-sm" style={{ color: 'var(--cs-danger)' }}>{error}</p>
           <CSButton variant="secondary" size="sm" className="mt-2" onClick={() => window.location.reload()}>Retry</CSButton>
