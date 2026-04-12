@@ -5,10 +5,25 @@ import { VisionService } from './vision.service';
 import { FrameExtractionService } from './frame-extraction.service';
 import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
+import { SynthesisService } from './synthesis.service';
 
 @Module({
   controllers: [RecordingsController],
-  providers: [RecordingsService, VisionService, FrameExtractionService, VisionTimelineService, PlaywrightService],
-  exports: [RecordingsService, VisionService, FrameExtractionService, VisionTimelineService, PlaywrightService],
+  providers: [
+    RecordingsService,
+    VisionService,
+    FrameExtractionService,
+    VisionTimelineService,
+    PlaywrightService,
+    SynthesisService,
+  ],
+  exports: [
+    RecordingsService,
+    VisionService,
+    FrameExtractionService,
+    VisionTimelineService,
+    PlaywrightService,
+    SynthesisService,
+  ],
 })
 export class RecordingsModule {}
