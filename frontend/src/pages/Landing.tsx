@@ -4,13 +4,18 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
-import { Film, Search, Zap, ChevronDown, Check, Coffee } from 'lucide-react';
+import { Film, Search, Zap, ChevronDown, Check, Coffee, Sun, Moon } from 'lucide-react';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
+import { useThemeStore } from '@/store/themeStore';
 
 const Landing: React.FC = () => {
   const { loginWithRedirect } = useAuth0();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { setTheme, getResolvedTheme } = useThemeStore();
   useDocumentTitle('');
+
+  const resolved = getResolvedTheme();
+  const toggleTheme = () => setTheme(resolved === 'dark' ? 'light' : 'dark');
 
   const handleSignup = () => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } });
   const handleLogin = () => loginWithRedirect();
@@ -19,19 +24,53 @@ const Landing: React.FC = () => {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
 
       {/* ── Navigation ── */}
-      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md border-b" style={{ borderColor: 'var(--cs-border-subtle)', backgroundColor: 'rgba(18, 18, 18, 0.85)' }}>
+      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md border-b" style={{ borderColor: 'var(--cs-border-subtle)', backgroundColor: 'var(--cs-nav-backdrop)' }}>
         <div className="mx-auto flex items-center justify-between h-14 px-6" style={{ maxWidth: 1080 }}>
           <Link to="/" className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--cs-accent)' }} />
             <span className="text-sm font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Claude Scope</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-6">
-            <a href="#how-it-works" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>How it works</a>
-            <a href="#pricing" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Pricing</a>
-            <a href="#faq" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>FAQ</a>
-            <a href="https://claudescope.mintlify.app/" target="_blank" rel="noopener noreferrer" className="text-sm" style={{ color: 'var(--cs-text-secondary)' }}>Docs</a>
+            {[
+              { href: '#how-it-works', label: 'How it works' },
+              { href: '#pricing', label: 'Pricing' },
+              { href: '#faq', label: 'FAQ' },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium transition-colors duration-150"
+                style={{ color: 'var(--cs-text-secondary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--cs-text-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--cs-text-secondary)'}
+              >
+                {link.label}
+              </a>
+            ))}
+            <a
+              href="https://claudescope.mintlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium transition-colors duration-150"
+              style={{ color: 'var(--cs-text-secondary)' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--cs-text-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--cs-text-secondary)'}
+            >
+              Docs
+            </a>
           </nav>
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg transition-colors duration-150"
+              style={{ color: 'var(--cs-text-secondary)' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--cs-text-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--cs-text-secondary)'}
+              title={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`}
+              aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {resolved === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
             <CSButton variant="ghost" size="sm" onClick={handleLogin}>Sign in</CSButton>
             <CSButton variant="primary" size="sm" onClick={handleSignup}>Get started</CSButton>
           </div>

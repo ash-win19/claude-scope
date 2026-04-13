@@ -43,6 +43,9 @@
     /* ── Neutral ── */
     --cs-neutral:        #4A4A4A;
 
+    /* ── Nav backdrop (semi-transparent for backdrop-blur) ── */
+    --cs-nav-backdrop:   rgba(18, 18, 18, 0.85);
+
     /* ── Semantic (danger uses coral, NOT brand red) ── */
     --cs-success:        #4ADE80;
     --cs-success-muted:  rgba(74, 222, 128, 0.12);
@@ -104,6 +107,9 @@
 
     /* ── Neutral ── */
     --cs-neutral:        #BDBDBD;
+
+    /* ── Nav backdrop (semi-transparent for backdrop-blur) ── */
+    --cs-nav-backdrop:   rgba(255, 255, 255, 0.82);
 
     /* ── Semantic ── */
     --cs-success:        #2E7D32;
