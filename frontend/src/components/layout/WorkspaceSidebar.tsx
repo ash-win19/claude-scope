@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderOpen, CircleDot, Plug, Key, Settings, PanelLeftClose, PanelLeft, X, Menu, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, CircleDot, Plug, Key, PanelLeftClose, PanelLeft, X, Menu } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { CSBadge } from '@/components/ui/CSBadge';
@@ -75,16 +75,22 @@ export const WorkspaceSidebar: React.FC = () => {
         <NavItem to="/workspace" icon={<LayoutDashboard size={16} />} label="Dashboard" active={isActive('/workspace') && !location.pathname.startsWith('/workspace/')} collapsed={isCollapsed} onClick={closeMobile} />
         <NavItem to="/workspace/sessions" icon={<FolderOpen size={16} />} label="Sessions" active={isActive('/workspace/sessions')} collapsed={isCollapsed} onClick={closeMobile} />
         <NavItem to="/workspace/record/new" icon={<CircleDot size={16} />} label="New Recording" active={isActive('/workspace/record')} collapsed={isCollapsed} onClick={closeMobile} />
-        <NavItem to="/workspace/docs" icon={<BookOpen size={16} />} label="Docs" active={isActive('/workspace/docs')} collapsed={isCollapsed} onClick={closeMobile} />
         <div className="h-px my-3" style={{ backgroundColor: 'var(--cs-border-subtle)' }} />
         <NavItem to="/workspace/integrations" icon={<Plug size={16} />} label="Integrations" active={isActive('/workspace/integrations')} collapsed={isCollapsed} badge="Soon" onClick={closeMobile} />
         <NavItem to="/workspace/model-access" icon={<Key size={16} />} label="Model Access" active={isActive('/workspace/model-access')} collapsed={isCollapsed} onClick={closeMobile} />
       </nav>
 
       <div className="px-2 py-3 border-t flex flex-col gap-1" style={{ borderColor: 'var(--cs-border-subtle)' }}>
-        <NavItem to="/workspace/settings" icon={<Settings size={16} />} label="Settings" active={isActive('/workspace/settings')} collapsed={isCollapsed} onClick={closeMobile} />
         {user && !isCollapsed && (
-          <div className="flex items-center gap-3 px-3 py-2 mt-1">
+          <Link
+            to="/workspace/profile"
+            onClick={closeMobile}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150"
+            style={{
+              backgroundColor: isActive('/workspace/profile') ? 'var(--cs-accent-muted)' : 'transparent',
+              color: isActive('/workspace/profile') ? 'var(--cs-text-primary)' : 'var(--cs-text-secondary)',
+            }}
+          >
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" />
             ) : (
@@ -92,11 +98,19 @@ export const WorkspaceSidebar: React.FC = () => {
                 {user.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </div>
             )}
-            <span className="text-xs truncate" style={{ color: 'var(--cs-text-secondary)' }}>{user.name}</span>
-          </div>
+            <span className="text-xs truncate">{user.name}</span>
+          </Link>
         )}
         {user && isCollapsed && (
-          <div className="flex justify-center py-2">
+          <Link
+            to="/workspace/profile"
+            onClick={closeMobile}
+            title="Profile"
+            className="flex justify-center py-2 rounded-lg transition-colors duration-150"
+            style={{
+              backgroundColor: isActive('/workspace/profile') ? 'var(--cs-accent-muted)' : 'transparent',
+            }}
+          >
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" />
             ) : (
@@ -104,7 +118,7 @@ export const WorkspaceSidebar: React.FC = () => {
                 {user.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </div>
             )}
-          </div>
+          </Link>
         )}
       </div>
     </>
