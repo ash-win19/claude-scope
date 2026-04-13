@@ -4,7 +4,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { CSButton } from '@/components/ui/CSButton';
 import { CSCard } from '@/components/ui/CSCard';
 import { CSMonoLabel } from '@/components/ui/CSMonoLabel';
-import { Film, Search, Zap, ChevronDown, Check } from 'lucide-react';
+import { Film, Search, Zap, ChevronDown, Check, Coffee } from 'lucide-react';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const Landing: React.FC = () => {
@@ -152,6 +152,27 @@ const Landing: React.FC = () => {
       <section className="py-16 px-6 text-center">
         <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--cs-text-primary)' }}>Stop describing bugs with words.</h2>
         <CSButton variant="primary" size="lg" onClick={handleSignup}>Start recording →</CSButton>
+      </section>
+
+      {/* ── Support ── */}
+      <section className="py-12 px-6" style={{ backgroundColor: 'var(--cs-bg-surface)' }}>
+        <div className="mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-6" style={{ maxWidth: 640, borderColor: 'var(--cs-border-subtle)', backgroundColor: 'var(--cs-bg-base)' }}>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0" style={{ backgroundColor: 'var(--cs-warning-muted)' }}>
+              <Coffee size={20} style={{ color: 'var(--cs-warning)' }} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Support the project</h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--cs-text-secondary)' }}>Enjoying Claude Scope? Buy us a coffee to keep it free and actively maintained.</p>
+            </div>
+          </div>
+          <a href="https://buymeacoffee.com/ashwinshanmugam" target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <CSButton variant="secondary" size="sm" style={{ borderColor: 'var(--cs-warning)', color: 'var(--cs-warning)' }}>
+              <Coffee size={14} />
+              Buy me a coffee
+            </CSButton>
+          </a>
+        </div>
       </section>
 
       {/* ── Footer ── */}
