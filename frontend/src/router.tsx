@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Sessions = lazy(() => import('@/pages/Sessions'));
 const SessionDetail = lazy(() => import('@/pages/SessionDetail'));
 const Settings = lazy(() => import('@/pages/Settings'));
+const Profile = lazy(() => import('@/pages/Profile'));
 const RecordNew = lazy(() => import('@/pages/RecordNew'));
 const Processing = lazy(() => import('@/pages/Processing'));
 const FrameReview = lazy(() => import('@/pages/FrameReview'));
@@ -56,7 +57,8 @@ export const router = createBrowserRouter([
   { path: '/workspace', element: wrapAuth(Dashboard) },
   { path: '/workspace/sessions', element: wrapAuth(Sessions) },
   { path: '/workspace/sessions/:id', element: wrapAuth(SessionDetail) },
-  { path: '/workspace/settings', element: wrapAuth(Settings) },
+  { path: '/workspace/profile', element: wrapAuth(Profile) },
+  { path: '/workspace/settings', element: <Navigate to="/workspace/profile" replace /> },
   { path: '/workspace/record/new', element: wrapAuth(RecordNew) },
   { path: '/workspace/record/:id/processing', element: wrapAuth(Processing) },
   { path: '/workspace/record/:id/review', element: wrapAuth(FrameReview) },

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root, .dark {
     /* ── Surfaces (dark mode — neutral charcoal) ── */
     --cs-bg-base:        #121212;
     --cs-bg-surface:     #1E1E1E;
@@ -63,6 +63,68 @@
     --cs-diff-added:     #4ADE80;
     --cs-diff-removed:   #FF6B6B;
     --cs-diff-changed:   #FBBF24;
+  }
+
+  .light {
+    /* ── Surfaces (light mode) ── */
+    --cs-bg-base:        #FAFAFA;
+    --cs-bg-surface:     #FFFFFF;
+    --cs-bg-raised:      #F3F3F3;
+    --cs-bg-overlay:     #E8E8E8;
+
+    /* ── Borders ── */
+    --cs-border-subtle:  rgba(0, 0, 0, 0.06);
+    --cs-border-default: rgba(0, 0, 0, 0.12);
+    --cs-border-strong:  rgba(0, 0, 0, 0.22);
+
+    /* ── Text ── */
+    --cs-text-primary:   #1A1A1A;
+    --cs-text-secondary: #5C5C5C;
+    --cs-text-muted:     #9E9E9E;
+
+    /* ── Brand — primary red ("Crimson Intelligence") ── */
+    --cs-accent:         #D02828;
+    --cs-accent-hover:   #B81E1E;
+    --cs-accent-muted:   rgba(208, 40, 40, 0.10);
+    --cs-accent-border:  rgba(208, 40, 40, 0.30);
+    --cs-accent-deep:    #8C1616;
+    --cs-on-accent:      #FFFFFF;
+
+    /* ── Brand — secondary blue ── */
+    --cs-secondary:      #1976D2;
+    --cs-secondary-hover: #1565C0;
+    --cs-secondary-muted: rgba(25, 118, 210, 0.10);
+    --cs-secondary-deep: #0D47A1;
+
+    /* ── Brand — accent teal ── */
+    --cs-teal:           #00A88A;
+    --cs-teal-hover:     #00897B;
+    --cs-teal-muted:     rgba(0, 168, 138, 0.10);
+    --cs-teal-deep:      #00695C;
+
+    /* ── Neutral ── */
+    --cs-neutral:        #BDBDBD;
+
+    /* ── Semantic ── */
+    --cs-success:        #2E7D32;
+    --cs-success-muted:  rgba(46, 125, 50, 0.10);
+    --cs-warning:        #F57F17;
+    --cs-warning-muted:  rgba(245, 127, 23, 0.10);
+    --cs-danger:         #D32F2F;
+    --cs-danger-muted:   rgba(211, 47, 47, 0.10);
+    --cs-info:           #1976D2;
+    --cs-info-muted:     rgba(25, 118, 210, 0.10);
+
+    /* ── Pipeline step accent colors ── */
+    --cs-step-record:    #D02828;
+    --cs-step-process:   #F57F17;
+    --cs-step-review:    #1976D2;
+    --cs-step-output:    #00A88A;
+
+    /* ── DOM diff colors ── */
+    --cs-diff-added:     #2E7D32;
+    --cs-diff-removed:   #D32F2F;
+    --cs-diff-changed:   #F57F17;
   }
 
   html {
