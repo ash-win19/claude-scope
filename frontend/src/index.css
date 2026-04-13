@@ -200,3 +200,31 @@
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(100%); }
 }
+
+/* ── Recording page: active card glow ── */
+@keyframes cs-recording-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(224, 48, 48, 0.15), 0 0 20px 0 rgba(224, 48, 48, 0.06); }
+  50% { box-shadow: 0 0 0 1px rgba(224, 48, 48, 0.3), 0 0 30px 4px rgba(224, 48, 48, 0.12); }
+}
+
+.cs-recording-active-card {
+  animation: cs-recording-glow 2s ease-in-out infinite;
+  border-color: rgba(224, 48, 48, 0.2) !important;
+}
+
+/* ── Recording page: start button hover pulse ── */
+@keyframes cs-btn-pulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(224, 48, 48, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(224, 48, 48, 0.5); }
+}
+
+.cs-record-btn:not(:disabled):hover {
+  animation: cs-btn-pulse 1.5s ease-in-out infinite;
+  transform: translateY(-1px);
+  transition: transform 150ms ease;
+}
+
+.cs-record-btn:not(:disabled):active {
+  transform: translateY(0);
+  animation: none;
+}
