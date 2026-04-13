@@ -7,9 +7,10 @@ import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
 import { SynthesisService } from './synthesis.service';
 import { AssetsModule } from '../assets/assets.module';
+import { CredentialsModule } from '../credentials/credentials.module';
 
 @Module({
-  imports: [AssetsModule],
+  imports: [AssetsModule, CredentialsModule],
   controllers: [RecordingsController],
   providers: [
     RecordingsService,

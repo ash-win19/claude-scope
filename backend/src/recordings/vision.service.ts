@@ -25,10 +25,19 @@ interface VisionAnalysisResponse {
   observations: string[];
 }
 
+/** Options for overriding the default API key and model on a per-request basis. */
+export interface VisionRequestOptions {
+  /** A user-provided Anthropic API key. When set, a per-request client is created. */
+  apiKey?: string;
+  /** The model to use for analysis. Defaults to claude-sonnet-4-20250514. */
+  model?: string;
+}
+
 @Injectable()
 export class VisionService {
   private readonly logger = new Logger(VisionService.name);
   private readonly client: Anthropic | null;
+  private readonly defaultModel = 'claude-sonnet-4-20250514';
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
@@ -39,21 +48,38 @@ export class VisionService {
     } else {
       this.client = null;
       this.logger.warn(
-        'ANTHROPIC_API_KEY is not set. Vision analysis will be unavailable.',
+        'ANTHROPIC_API_KEY is not set. Vision analysis will be unavailable unless users provide their own keys.',
       );
     }
   }
 
-  isAvailable(): boolean {
-    return this.client !== null;
+  /**
+   * Returns true if vision analysis is available, either via server key or user-provided key.
+   */
+  isAvailable(options?: VisionRequestOptions): boolean {
+    return this.client !== null || !!options?.apiKey;
+  }
+
+  /**
+   * Resolves the Anthropic client to use for a request.
+   * If a user API key is provided, creates a per-request client.
+   * Otherwise falls back to the server-level client.
+   */
+  private resolveClient(options?: VisionRequestOptions): Anthropic | null {
+    if (options?.apiKey) {
+      return new Anthropic({ apiKey: options.apiKey });
+    }
+    return this.client;
   }
 
   /**
    * Analyzes a single extracted frame using the Anthropic vision API.
    * Returns error result if the client is not available or on failure.
    */
-  async analyzeFrame(frame: ExtractedFrame): Promise<FrameAnalysisResult> {
-    if (!this.client) {
+  async analyzeFrame(frame: ExtractedFrame, options?: VisionRequestOptions): Promise<FrameAnalysisResult> {
+    const client = this.resolveClient(options);
+
+    if (!client) {
       return {
         frameId: frame.frameId,
         timestampMs: frame.timestampMs,
@@ -61,17 +87,19 @@ export class VisionService {
         elements: [],
         observations: [],
         success: false,
-        error: 'Anthropic client is not available. Check ANTHROPIC_API_KEY.',
+        error: 'Anthropic client is not available. Check ANTHROPIC_API_KEY or provide your own key.',
       };
     }
+
+    const model = options?.model || this.defaultModel;
 
     try {
       const imageBuffer = fs.readFileSync(frame.filePath);
       const base64Image = imageBuffer.toString('base64');
       const mediaType = frame.format === 'png' ? 'image/png' : 'image/jpeg';
 
-      const response = await this.client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+      const response = await client.messages.create({
+        model,
         max_tokens: 1024,
         messages: [
           {
@@ -152,12 +180,14 @@ export class VisionService {
    * Analyzes multiple frames sequentially and returns all results.
    * Partial failures are tolerated (individual frames may have success: false).
    */
-  async analyzeFrames(frames: ExtractedFrame[]): Promise<FrameAnalysisResult[]> {
-    this.logger.log(`Starting analysis of ${frames.length} frames`);
+  async analyzeFrames(frames: ExtractedFrame[], options?: VisionRequestOptions): Promise<FrameAnalysisResult[]> {
+    const usingUserKey = !!options?.apiKey;
+    const model = options?.model || this.defaultModel;
+    this.logger.log(`Starting analysis of ${frames.length} frames (userKey: ${usingUserKey}, model: ${model})`);
     const results: FrameAnalysisResult[] = [];
 
     for (const frame of frames) {
-      const result = await this.analyzeFrame(frame);
+      const result = await this.analyzeFrame(frame, options);
       results.push(result);
     }
 

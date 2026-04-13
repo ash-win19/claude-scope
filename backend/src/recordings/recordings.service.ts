@@ -9,9 +9,10 @@ import { eq } from 'drizzle-orm';
 import { UploadRecordingDto } from './dto/upload-recording.dto';
 import { ProcessingResponse, ProcessedFrame } from './types/processing-response';
 import { FrameExtractionService } from './frame-extraction.service';
-import { VisionService } from './vision.service';
+import { VisionService, VisionRequestOptions } from './vision.service';
 import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
+import { CredentialsService } from '../credentials/credentials.service';
 
 @Injectable()
 export class RecordingsService {
@@ -24,6 +25,7 @@ export class RecordingsService {
     private readonly visionTimeline: VisionTimelineService,
     private readonly playwright: PlaywrightService,
     private readonly assetsService: AssetsService,
+    private readonly credentialsService: CredentialsService,
   ) {}
 
   async processUpload(
@@ -45,6 +47,16 @@ export class RecordingsService {
       notes: dto.notes ?? null,
     });
     await this.updateStatus(sessionId, this.initialStatus());
+
+    // 1b. Look up user's active Anthropic credential for BYOK
+    const visionOptions: VisionRequestOptions = {};
+    const userApiKey = await this.credentialsService.getDecryptedKeyForProvider(userId, 'anthropic');
+    if (userApiKey) {
+      visionOptions.apiKey = userApiKey;
+      this.logger.log(`[${sessionId}] Using user-provided Anthropic API key (BYOK)`);
+    } else {
+      this.logger.log(`[${sessionId}] No user credential found, falling back to server ANTHROPIC_API_KEY`);
+    }
 
     // 2. Create temp workspace
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cs-recording-'));
@@ -73,8 +85,8 @@ export class RecordingsService {
         throw new Error('Playwright browser is not available. Cannot process recording.');
       }
 
-      if (!this.vision.isAvailable()) {
-        throw new Error('Vision service is not available. Check ANTHROPIC_API_KEY.');
+      if (!this.vision.isAvailable(visionOptions)) {
+        throw new Error('Vision service is not available. Check ANTHROPIC_API_KEY or add your own key on the Model Access page.');
       }
 
       // 6. Run vision + playwright in parallel — both required
@@ -86,7 +98,7 @@ export class RecordingsService {
       this.logger.log(`[${sessionId}] Running vision and playwright lanes in parallel...`);
 
       const [visionResults, inspectionResult] = await Promise.all([
-        this.vision.analyzeFrames(extractedFrames),
+        this.vision.analyzeFrames(extractedFrames, visionOptions),
         this.playwright.inspectUrls([dto.seedUrl]),
       ]);
 

@@ -54,12 +54,16 @@ export const PROVIDERS: ProviderConfig[] = [
   },
 ];
 
+/** Maps provider id -> backend credential id (if one exists). */
+export type CredentialMap = Record<string, { credentialId: string; maskedKey: string }>;
+
 interface ProviderState {
-  keys: Record<string, string>;
+  /** Provider id -> credential info from backend. No plaintext keys stored. */
+  savedCredentials: CredentialMap;
   activeProviderId: string;
   activeModelId: string;
-  setKey: (providerId: string, key: string) => void;
-  removeKey: (providerId: string) => void;
+  setSavedCredential: (providerId: string, credentialId: string, maskedKey: string) => void;
+  removeSavedCredential: (providerId: string) => void;
   setActiveProvider: (providerId: string) => void;
   setActiveModel: (modelId: string) => void;
 }
@@ -67,20 +71,38 @@ interface ProviderState {
 export const useProviderStore = create<ProviderState>()(
   persist(
     (set) => ({
-      keys: {},
+      savedCredentials: {},
       activeProviderId: 'anthropic',
       activeModelId: 'claude-sonnet-4-20250514',
-      setKey: (providerId, key) =>
-        set((s) => ({ keys: { ...s.keys, [providerId]: key } })),
-      removeKey: (providerId) =>
+      setSavedCredential: (providerId, credentialId, maskedKey) =>
+        set((s) => ({
+          savedCredentials: { ...s.savedCredentials, [providerId]: { credentialId, maskedKey } },
+        })),
+      removeSavedCredential: (providerId) =>
         set((s) => {
-          const next = { ...s.keys };
+          const next = { ...s.savedCredentials };
           delete next[providerId];
-          return { keys: next };
+          return { savedCredentials: next };
         }),
       setActiveProvider: (providerId) => set({ activeProviderId: providerId }),
       setActiveModel: (modelId) => set({ activeModelId: modelId }),
     }),
-    { name: 'cs-providers' }
+    {
+      name: 'cs-providers',
+      // Migrate from old schema that stored plaintext keys
+      migrate: (persisted: unknown) => {
+        const state = persisted as Record<string, unknown>;
+        // If the old `keys` field exists, drop it — those were plaintext keys
+        if (state && typeof state === 'object' && 'keys' in state) {
+          delete state.keys;
+        }
+        // Ensure savedCredentials exists
+        if (!state.savedCredentials) {
+          state.savedCredentials = {};
+        }
+        return state as ProviderState;
+      },
+      version: 1,
+    }
   )
 );
