@@ -25,7 +25,7 @@ export class UpdateSettingsDto {
   @ApiPropertyOptional({ minimum: 5, maximum: 300 })
   @IsOptional()
   @IsInt()
-  @Min(5)
-  @Max(300)
+  @Min(10)
+  @Max(30)
   maxRecordingLength?: number;
 }
