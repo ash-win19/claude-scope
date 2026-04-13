@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderOpen, CircleDot, Plug, Key, PanelLeftClose, PanelLeft, X, Menu } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, CircleDot, Plug, Key, PanelLeftClose, PanelLeft, X, Menu, Coffee } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { CSBadge } from '@/components/ui/CSBadge';
@@ -79,6 +79,22 @@ export const WorkspaceSidebar: React.FC = () => {
         <NavItem to="/workspace/integrations" icon={<Plug size={16} />} label="Integrations" active={isActive('/workspace/integrations')} collapsed={isCollapsed} badge="Soon" onClick={closeMobile} />
         <NavItem to="/workspace/model-access" icon={<Key size={16} />} label="Model Access" active={isActive('/workspace/model-access')} collapsed={isCollapsed} onClick={closeMobile} />
       </nav>
+
+      <div className="px-2 pb-2">
+        <a
+          href="https://buymeacoffee.com/claudescope"
+          target="_blank"
+          rel="noopener noreferrer"
+          title={isCollapsed ? 'Buy me a coffee' : undefined}
+          className={`flex items-center gap-3 rounded-lg text-sm transition-colors duration-150 hover:brightness-110 ${isCollapsed ? 'justify-center px-2 py-2' : 'px-3 py-2'}`}
+          style={{
+            color: 'var(--cs-warning)',
+          }}
+        >
+          <Coffee size={16} />
+          {!isCollapsed && <span className="flex-1 truncate">Buy me a coffee</span>}
+        </a>
+      </div>
 
       <div className="px-2 py-3 border-t flex flex-col gap-1" style={{ borderColor: 'var(--cs-border-subtle)' }}>
         {user && !isCollapsed && (
