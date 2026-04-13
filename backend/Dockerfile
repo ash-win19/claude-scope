@@ -23,4 +23,4 @@ RUN npm run build
 # Expose port
 EXPOSE 8080
 
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npm run db:migrate:prod && node dist/main"]

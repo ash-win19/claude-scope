@@ -1,1 +1,1 @@
-ALTER TABLE "sessions" ADD COLUMN "processing_status" jsonb DEFAULT null;
+ALTER TABLE "sessions" ADD COLUMN IF NOT EXISTS "processing_status" jsonb DEFAULT null;

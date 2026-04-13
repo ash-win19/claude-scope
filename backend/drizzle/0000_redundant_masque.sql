@@ -1,6 +1,12 @@
-CREATE TYPE "public"."agent_type" AS ENUM('CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW');--> statement-breakpoint
-CREATE TYPE "public"."session_status" AS ENUM('processing', 'complete', 'error');--> statement-breakpoint
-CREATE TABLE "frames" (
+DO $$ BEGIN
+  CREATE TYPE "public"."agent_type" AS ENUM('CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  CREATE TYPE "public"."session_status" AS ENUM('processing', 'complete', 'error');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "frames" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"session_id" varchar(36) NOT NULL,
 	"timestamp" integer DEFAULT 0 NOT NULL,
@@ -11,7 +17,7 @@ CREATE TABLE "frames" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "sessions" (
+CREATE TABLE IF NOT EXISTS "sessions" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"user_id" varchar(36) NOT NULL,
 	"title" varchar(500) NOT NULL,
@@ -27,7 +33,7 @@ CREATE TABLE "sessions" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "user_settings" (
+CREATE TABLE IF NOT EXISTS "user_settings" (
 	"user_id" varchar(36) PRIMARY KEY NOT NULL,
 	"default_agent" "agent_type" DEFAULT 'CLAUDE_CODE' NOT NULL,
 	"include_screenshots" integer DEFAULT 1 NOT NULL,
@@ -37,7 +43,7 @@ CREATE TABLE "user_settings" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
@@ -48,6 +54,15 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-ALTER TABLE "frames" ADD CONSTRAINT "frames_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+DO $$ BEGIN
+  ALTER TABLE "frames" ADD CONSTRAINT "frames_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;

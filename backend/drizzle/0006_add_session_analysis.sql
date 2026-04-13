@@ -1,4 +1,4 @@
-CREATE TABLE "session_analysis" (
+CREATE TABLE IF NOT EXISTS "session_analysis" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"session_id" varchar(36) NOT NULL,
 	"timeline_json" jsonb DEFAULT null,
@@ -13,4 +13,7 @@ CREATE TABLE "session_analysis" (
 	CONSTRAINT "session_analysis_session_id_unique" UNIQUE("session_id")
 );
 --> statement-breakpoint
-ALTER TABLE "session_analysis" ADD CONSTRAINT "session_analysis_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE cascade ON UPDATE no action;
+DO $$ BEGIN
+  ALTER TABLE "session_analysis" ADD CONSTRAINT "session_analysis_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;

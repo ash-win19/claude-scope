@@ -20,5 +20,3 @@ npm-debug.log*
 # test coverage
 coverage/
 
-# drizzle migrations
-drizzle/meta/
