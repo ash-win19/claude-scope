@@ -82,7 +82,7 @@ export const WorkspaceSidebar: React.FC = () => {
 
       <div className="px-2 pb-2">
         <a
-          href="https://buymeacoffee.com/claudescope"
+          href="https://buymeacoffee.com/ashwinshanmugam"
           target="_blank"
           rel="noopener noreferrer"
           title={isCollapsed ? 'Buy me a coffee' : undefined}

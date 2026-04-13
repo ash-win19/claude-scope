@@ -166,7 +166,7 @@ const Landing: React.FC = () => {
               <p className="text-xs mt-0.5" style={{ color: 'var(--cs-text-secondary)' }}>Enjoying Claude Scope? Buy us a coffee to keep it free and actively maintained.</p>
             </div>
           </div>
-          <a href="https://buymeacoffee.com/claudescope" target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <a href="https://buymeacoffee.com/ashwinshanmugam" target="_blank" rel="noopener noreferrer" className="shrink-0">
             <CSButton variant="secondary" size="sm" style={{ borderColor: 'var(--cs-warning)', color: 'var(--cs-warning)' }}>
               <Coffee size={14} />
               Buy me a coffee
