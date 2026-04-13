@@ -47,23 +47,38 @@ export const PipelineShell: React.FC<PipelineShellProps> = ({
       >
         {/* Pipeline navigation bar */}
         <nav
-          className="sticky top-0 z-30 h-14 flex items-center px-6 border-b"
+          className="sticky top-0 z-30 border-b"
           style={{
-            backgroundColor: 'var(--cs-bg-surface)',
             borderColor: 'var(--cs-border-subtle)',
           }}
         >
-          <CSButton variant="ghost" size="sm" onClick={handleExit} iconLeft={<ArrowLeft size={14} />}>
-            Exit
-          </CSButton>
+          {/* Main nav bar */}
+          <div
+            className="h-14 flex items-center px-4 sm:px-6"
+            style={{
+              backgroundColor: 'var(--cs-bg-surface)',
+            }}
+          >
+            <CSButton variant="ghost" size="sm" onClick={handleExit} iconLeft={<ArrowLeft size={14} />}>
+              Exit
+            </CSButton>
 
-          <div className="flex-1 flex justify-center">
-            <CSPipelineStepper steps={PIPELINE_STEPS} currentStep={currentStep} />
-          </div>
+            <div className="flex-1 flex justify-center">
+              <CSPipelineStepper steps={PIPELINE_STEPS} currentStep={currentStep} />
+            </div>
 
-          <div className="ml-auto">
-            {rightAction}
+            <div className="ml-auto">
+              {rightAction}
+            </div>
           </div>
+          {/* Accent underline for the current step */}
+          <div
+            className="h-[2px] transition-all duration-500 ease-out"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${PIPELINE_STEPS[currentStep]?.color || 'var(--cs-accent)'} 50%, transparent 100%)`,
+              opacity: 0.6,
+            }}
+          />
         </nav>
 
         <main className="mx-auto w-full py-10 px-6 sm:px-8 lg:px-10" style={{ maxWidth }}>
