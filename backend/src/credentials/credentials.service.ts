@@ -1,4 +1,4 @@
-import { Inject, Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../database/database.module';
 import { userModelCredentials } from '../database/schema';
@@ -8,6 +8,8 @@ import { encrypt, decrypt } from './crypto.util';
 
 @Injectable()
 export class CredentialsService {
+  private readonly logger = new Logger(CredentialsService.name);
+
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async findAll(userId: string) {
@@ -61,6 +63,36 @@ export class CredentialsService {
     await this.db
       .delete(userModelCredentials)
       .where(eq(userModelCredentials.id, credentialId));
+  }
+
+  /**
+   * Retrieves the decrypted API key for a user's active credential for a given provider.
+   * Returns null if no active credential is found.
+   */
+  async getDecryptedKeyForProvider(userId: string, provider: string): Promise<string | null> {
+    const rows = await this.db
+      .select()
+      .from(userModelCredentials)
+      .where(
+        and(
+          eq(userModelCredentials.userId, userId),
+          eq(userModelCredentials.provider, provider),
+          eq(userModelCredentials.isActive, 1),
+        ),
+      )
+      .limit(1);
+
+    if (rows.length === 0) {
+      this.logger.debug(`No active credential found for user ${userId}, provider ${provider}`);
+      return null;
+    }
+
+    try {
+      return decrypt(rows[0].encryptedApiKey);
+    } catch (err) {
+      this.logger.error(`Failed to decrypt credential ${rows[0].id}: ${err instanceof Error ? err.message : err}`);
+      return null;
+    }
   }
 
   private toResponse(row: typeof userModelCredentials.$inferSelect) {
