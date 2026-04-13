@@ -90,10 +90,9 @@ const Settings: React.FC = () => {
                 color: 'var(--cs-text-primary)',
               }}
             >
-              <option value={5}>5 minutes</option>
-              <option value={10}>10 minutes</option>
-              <option value={15}>15 minutes</option>
-              <option value={30}>30 minutes</option>
+              <option value={10}>10 seconds</option>
+              <option value={20}>20 seconds</option>
+              <option value={30}>30 seconds</option>
             </select>
           </div>
         </div>
