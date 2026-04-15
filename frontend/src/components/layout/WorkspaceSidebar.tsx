@@ -52,8 +52,10 @@ export const WorkspaceSidebar: React.FC = () => {
   const sidebarContent = (isCollapsed: boolean, closeMobile?: () => void) => (
     <>
       <div className={`h-14 flex items-center border-b ${isCollapsed ? 'justify-center px-2' : 'gap-2 px-4'}`} style={{ borderColor: 'var(--cs-border-subtle)' }}>
-        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--cs-accent)' }} />
-        {!isCollapsed && <span className="text-sm font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Claude Scope</span>}
+        <Link to="/" className={`flex items-center shrink-0 ${isCollapsed ? '' : 'gap-2'}`}>
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--cs-accent)' }} />
+          {!isCollapsed && <span className="text-sm font-semibold" style={{ color: 'var(--cs-text-primary)' }}>Claude Scope</span>}
+        </Link>
         {closeMobile && !isCollapsed && (
           <button onClick={closeMobile} className="ml-auto p-1" style={{ color: 'var(--cs-text-muted)' }}>
             <X size={16} />
