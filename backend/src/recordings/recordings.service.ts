@@ -156,11 +156,6 @@ export class RecordingsService {
         const analysis = visionResults[i];
         const frameId = this.generateId('frm');
 
-        // Store frame as asset and use API URL for thumbnailUrl
-        const frameBuffer = fs.readFileSync(ef.filePath);
-        const asset = await this.assetsService.createAsset(sessionId, frameId, 'thumbnail', frameBuffer, 'image/png');
-        const thumbnailUrl = `/api/assets/${asset.id}`;
-
         // Convert vision elements to ARIANodeJson shape
         const ariaTree = analysis && analysis.success
           ? analysis.elements.map((el) => ({
@@ -189,22 +184,30 @@ export class RecordingsService {
           }
         }
 
+        // Insert frame first so the FK on session_assets.frame_id is satisfiable
         const [inserted] = await this.db.insert(frames).values({
           id: frameId,
           sessionId,
           timestamp: ef.timestampMs,
           url: dto.seedUrl,
-          thumbnailUrl,
+          thumbnailUrl: '',
           diffSummary,
           ariaTree,
         }).returning();
+
+        // Now create the asset — the frame row exists so the FK constraint passes
+        const frameBuffer = fs.readFileSync(ef.filePath);
+        const asset = await this.assetsService.createAsset(sessionId, frameId, 'thumbnail', frameBuffer, 'image/png');
+        const thumbnailUrl = `/api/assets/${asset.id}`;
+
+        await this.db.update(frames).set({ thumbnailUrl }).where(eq(frames.id, frameId));
 
         persistedFrames.push({
           id: inserted.id,
           sessionId: inserted.sessionId,
           timestamp: inserted.timestamp,
           url: inserted.url,
-          thumbnailUrl: inserted.thumbnailUrl,
+          thumbnailUrl,
           diffSummary: inserted.diffSummary,
           ariaTree: inserted.ariaTree as ProcessedFrame['ariaTree'],
           createdAt: inserted.createdAt.toISOString(),

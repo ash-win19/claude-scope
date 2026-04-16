@@ -8,6 +8,7 @@ import { VisionTimelineService } from './vision-timeline.service';
 import { PlaywrightService } from './playwright.service';
 import { SynthesisService } from './synthesis.service';
 import { AssetsService } from '../assets/assets.service';
+import { CredentialsService } from '../credentials/credentials.service';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
@@ -90,7 +91,19 @@ function createMocks() {
     }),
   };
 
-  return { mockFrameExtraction, mockVision, mockTimeline, mockPlaywright, mockSynthesis, mockAssetsService };
+  const mockCredentialsService = {
+    getDecryptedKeyForProvider: jest.fn().mockResolvedValue(null),
+  };
+
+  return {
+    mockFrameExtraction,
+    mockVision,
+    mockTimeline,
+    mockPlaywright,
+    mockSynthesis,
+    mockAssetsService,
+    mockCredentialsService,
+  };
 }
 
 const mockFile = {
@@ -136,6 +149,7 @@ describe('RecordingsService', () => {
         { provide: PlaywrightService, useValue: mocks.mockPlaywright },
         { provide: SynthesisService, useValue: mocks.mockSynthesis },
         { provide: AssetsService, useValue: mocks.mockAssetsService },
+        { provide: CredentialsService, useValue: mocks.mockCredentialsService },
       ],
     }).compile();
 
@@ -151,6 +165,7 @@ describe('RecordingsService', () => {
     expect(result.status).toBe('complete');
     expect(result.promptStatus).toBe('not_started');
     expect(result.frames).toBeDefined();
+    expect(result.frames[0]?.thumbnailUrl).toBe('/api/assets/ast_test0001');
     expect(result.inspection).toBeDefined();
     expect(result.processingMs).toBeGreaterThanOrEqual(0);
   });
