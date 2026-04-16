@@ -27,17 +27,23 @@ export class AssetsService {
 
     await this.storage.write(storageKey, buffer);
 
-    const [asset] = await this.db.insert(sessionAssets).values({
-      id,
-      sessionId,
-      frameId,
-      kind,
-      storageKey,
-      mimeType,
-      byteSize: buffer.length,
-    }).returning();
+    try {
+      const [asset] = await this.db.insert(sessionAssets).values({
+        id,
+        sessionId,
+        frameId,
+        kind,
+        storageKey,
+        mimeType,
+        byteSize: buffer.length,
+      }).returning();
 
-    return asset;
+      return asset;
+    } catch (error) {
+      await this.storage.remove(storageKey);
+      this.logger.error(`Failed to persist asset metadata for ${storageKey}`, error instanceof Error ? error.stack : undefined);
+      throw error;
+    }
   }
 
   async getAsset(assetId: string) {
