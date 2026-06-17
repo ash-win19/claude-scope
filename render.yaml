@@ -1,0 +1,83 @@
+# Render Blueprint for Claude Scope
+# Project: "Claude Scope" (prj-d8pec7tckfvc73a79a6g) in workspace "My Personal Workspace"
+#
+# Two services:
+#   - claude-scope-backend : NestJS (Docker) — runs Chromium + ffmpeg, so it needs a
+#                            real container (not serverless) and >512MB RAM.
+#   - claude-scope-frontend: Vite SPA served as a free static site (CDN, no spin-down).
+#
+# Postgres is NOT defined here — the app uses Neon (external, serverless). Set DATABASE_URL
+# to the Neon connection string.
+#
+# Secrets (sync: false) must be set in the Render dashboard / CLI after creation; they are
+# never committed. See README "Deploy on Render" for the full procedure and Auth0 steps.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend — NestJS API (Docker)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: claude-scope-backend
+    runtime: docker
+    plan: standard            # 2 GB RAM. Chromium + ffmpeg OOM on free/starter (512 MB).
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend  # Dockerfile COPYs are relative to backend/
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      # Uploaded assets are written to /app/uploads (asset-storage.service.ts) and
+      # referenced by DB rows. Without a persistent disk they vanish on every
+      # restart/redeploy. (A single-attach disk pins this service to 1 instance.)
+      name: uploads
+      mountPath: /app/uploads
+      sizeGB: 5
+    envVars:
+      # --- secrets: set via dashboard/CLI, never committed ---
+      - key: DATABASE_URL
+        sync: false           # Neon Postgres connection string (?sslmode=require)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        sync: false           # openssl rand -hex 32 — NEVER rotate (breaks stored creds)
+      # --- non-secret config ---
+      - key: AUTH0_DOMAIN
+        sync: false           # e.g. claude-scope.us.auth0.com
+      - key: AUTH0_AUDIENCE
+        value: https://api.claude-scope.com
+      - key: FRONTEND_URL
+        # CORS origin. Wire to the frontend service URL (set after first deploy,
+        # or via fromService once the static site exists).
+        fromService:
+          name: claude-scope-frontend
+          type: web
+          property: hostport  # yields host:port; prepend https:// if a bare origin is required
+      # PORT is injected by Render automatically — do NOT set it (main.ts honors process.env.PORT).
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Vite SPA (static site, free)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: claude-scope-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    # SPA fallback: deep client-side routes (e.g. /workspace/sessions/:id) 404 on
+    # hard refresh without this rewrite.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # All VITE_* vars are baked at BUILD time and shipped to the browser (public).
+      # Changing any of them requires a rebuild, not just an env edit.
+      - key: VITE_API_BASE_URL
+        sync: false           # backend URL WITH the /api suffix, e.g. https://claude-scope-backend.onrender.com/api
+      - key: VITE_AUTH0_DOMAIN
+        sync: false
+      - key: VITE_AUTH0_CLIENT_ID
+        sync: false
+      - key: VITE_AUTH0_AUDIENCE
+        value: https://api.claude-scope.com
