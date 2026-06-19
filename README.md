@@ -261,8 +261,71 @@ The app is deployed on **Railway**:
 Frontend:  React · Vite · TypeScript · Tailwind · Radix UI · Zustand · TanStack Query · Auth0
 Backend:   NestJS · Drizzle ORM · Passport JWT · FFmpeg · Playwright · Anthropic SDK
 Database:  PostgreSQL (Neon)
-Infra:     Railway · Docker · Auth0
+Infra:     Render · Docker · Auth0
 ```
+
+## Deploy on Render
+
+The repo ships a [`render.yaml`](./render.yaml) Blueprint that provisions two services:
+
+| Service | Type | Plan | Notes |
+|---------|------|------|-------|
+| `claude-scope-backend` | Docker web service | **Standard (2 GB)** | Runs Chromium + ffmpeg — needs a real container and >512 MB RAM (free/starter will OOM mid-recording). Persistent disk mounted at `/app/uploads`. |
+| `claude-scope-frontend` | Static site | Free | Vite SPA served from Render's CDN — no cold start. SPA rewrite (`/* → /index.html`). |
+
+Postgres is **not** provisioned by Render — the app uses **Neon** (external). Point `DATABASE_URL` at your Neon connection string.
+
+### 1. Environment variables
+
+**Backend** (`claude-scope-backend`):
+
+| Var | Secret? | Value / source |
+|-----|---------|----------------|
+| `DATABASE_URL` | 🔒 secret | Neon connection string (`...?sslmode=require`) |
+| `ANTHROPIC_API_KEY` | 🔒 secret | Server-side Anthropic key |
+| `CREDENTIAL_ENCRYPTION_KEY` | 🔒 secret | `openssl rand -hex 32` — **never rotate** (existing stored user credentials become undecryptable) |
+| `AUTH0_DOMAIN` | plain | e.g. `claude-scope.us.auth0.com` |
+| `AUTH0_AUDIENCE` | plain | `https://api.claude-scope.com` |
+| `FRONTEND_URL` | plain | The frontend service URL (for CORS), e.g. `https://claude-scope-frontend.onrender.com` |
+| `PORT` | — | **Do not set** — Render injects it; `main.ts` honors `process.env.PORT` |
+
+**Frontend** (`claude-scope-frontend`) — all `VITE_*` vars are **build-time** (baked into the bundle, public; changing one requires a rebuild):
+
+| Var | Value |
+|-----|-------|
+| `VITE_API_BASE_URL` | Backend URL **with `/api` suffix**, e.g. `https://claude-scope-backend.onrender.com/api` |
+| `VITE_AUTH0_DOMAIN` | e.g. `claude-scope.us.auth0.com` |
+| `VITE_AUTH0_CLIENT_ID` | Auth0 SPA client ID |
+| `VITE_AUTH0_AUDIENCE` | `https://api.claude-scope.com` |
+
+### 2. Resolve the URL chicken-and-egg
+
+Each service needs the other's URL. After the first deploy:
+
+1. Set the backend's `FRONTEND_URL` to the frontend's Render URL (triggers a backend redeploy).
+2. Set the frontend's `VITE_API_BASE_URL` to `<backend-url>/api` and **redeploy the frontend** (it's baked at build time).
+
+Using a custom domain for each service up front avoids this dance.
+
+### 3. Auth0 dashboard (manual)
+
+In the Auth0 SPA application, add the **frontend** Render URL to:
+
+- **Allowed Callback URLs:** `https://<frontend>.onrender.com/workspace`
+- **Allowed Logout URLs:** `https://<frontend>.onrender.com`
+- **Allowed Web Origins:** `https://<frontend>.onrender.com`
+
+Confirm an Auth0 **API** exists with Identifier (audience) `https://api.claude-scope.com`, signing alg RS256. (The backend never appears in Auth0 config — it only validates tokens via JWKS.)
+
+### 4. Migrations
+
+The backend Docker `CMD` runs `db:migrate:prod` on boot — idempotent and fine for a single instance. If you ever scale the backend past 1 instance, move migrations to a Render pre-deploy command (concurrent boots would race; Drizzle takes no advisory lock).
+
+### 5. Verify
+
+- Backend health: `GET https://<backend>.onrender.com/api/health` returns `{ status: "ok" }`.
+- Run one recording end-to-end (confirms no OOM under Chromium + ffmpeg).
+- Redeploy the backend and confirm previously uploaded assets still load (validates the persistent disk).
 
 ---
 
