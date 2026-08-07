@@ -35,11 +35,11 @@ The generated prompt works with **Claude Code**, **OpenAI Codex**, **Cursor**, o
 ## How It Works
 
 ```
-┌──────────────┐     ┌───────────────────┐     ┌─────────────────────┐
+┌──────────────┐     ┌────────────────────┐     ┌─────────────────────┐
 │  Record Tab  │────▶│  Frame Extraction  │────▶│  Dual-Lane Analysis │
 │  (Browser)   │     │  (FFmpeg + SSIM)   │     │                     │
-└──────────────┘     └───────────────────┘     │  ┌───────────────┐  │
-                                                │  │  Vision AI    │  │
+└──────────────┘     └────────────────────┘     │  ┌───────────────┐  │
+                                                │  │   Vision AI   │  │
                                                 │  │  (Anthropic)  │  │
                                                 │  └───────┬───────┘  │
                                                 │          │          │
