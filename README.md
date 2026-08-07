@@ -7,9 +7,9 @@
 Record your browser tab, detect UI changes, inspect the DOM via accessibility snapshots, and generate structured system prompts for AI coding agents — automatically.
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-blue?style=for-the-badge)](https://claude-scope-frontend-production.up.railway.app/)
-[![License](https://img.shields.io/badge/License-Private-lightgrey?style=for-the-badge)]()
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-[Live App](https://claude-scope-frontend-production.up.railway.app/) · [Documentation](https://claudescope.mintlify.app/) · [Report Bug](#) · [Request Feature](#)
+[Live App](https://claude-scope-frontend-production.up.railway.app/) · [Documentation](https://claudescope.mintlify.app/) · [Report Bug](https://github.com/ash-win19/claude-scope/issues) · [Request Feature](https://github.com/ash-win19/claude-scope/issues)
 
 </div>
 
@@ -149,7 +149,7 @@ CREDENTIAL_ENCRYPTION_KEY=your-32-byte-hex-key
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/claude-scope.git
+git clone https://github.com/ash-win19/claude-scope.git
 cd claude-scope
 
 # Install frontend dependencies
@@ -326,6 +326,10 @@ The backend Docker `CMD` runs `db:migrate:prod` on boot — idempotent and fine 
 - Backend health: `GET https://<backend>.onrender.com/api/health` returns `{ status: "ok" }`.
 - Run one recording end-to-end (confirms no OOM under Chromium + ffmpeg).
 - Redeploy the backend and confirm previously uploaded assets still load (validates the persistent disk).
+
+## License
+
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.
 
 ---
 
