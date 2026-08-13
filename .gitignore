@@ -4,3 +4,7 @@ node_modules
 __pycache__/
 *.pyc
 .coverage
+
+# Auth0 MCP artifacts (matched at any depth, incl. frontend/)
+.auth0-mcp-state.json
+.auth0-mcp-writes.log

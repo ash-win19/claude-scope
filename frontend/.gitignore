@@ -36,8 +36,3 @@ yarn.lock
 # OS files
 .DS_Store
 Thumbs.db
-
-# Auth0 credentials
-.auth0-mcp-state.json
-
-.auth0-mcp-writes.log
