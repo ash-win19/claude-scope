@@ -388,13 +388,14 @@ export const settings = {
 
 // ── Recordings API ──
 export const recordings = {
-  upload: (file: Blob, meta: { title: string; seedUrl: string; notes?: string; agentTarget?: string }) => {
+  upload: (file: Blob, meta: { title: string; seedUrl: string; notes?: string; agentTarget?: string; durationMs?: number }) => {
     const formData = new FormData();
     formData.append('file', file, 'recording.webm');
     formData.append('title', meta.title);
     formData.append('seedUrl', meta.seedUrl);
     if (meta.notes) formData.append('notes', meta.notes);
     if (meta.agentTarget) formData.append('agentTarget', meta.agentTarget);
+    if (meta.durationMs != null) formData.append('durationMs', String(meta.durationMs));
 
     return request<ProcessingResponse>('/recordings', {
       method: 'POST',

@@ -5,7 +5,11 @@ import {
   IsUrl,
   IsOptional,
   IsEnum,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UploadRecordingDto {
@@ -36,4 +40,15 @@ export class UploadRecordingDto {
   @IsOptional()
   @IsEnum(['CLAUDE_CODE', 'CODEX', 'CURSOR', 'RAW'])
   agentTarget?: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
+
+  @ApiPropertyOptional({
+    description: 'Client-recorded elapsed time in milliseconds',
+    example: 8000,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(120000)
+  durationMs?: number;
 }

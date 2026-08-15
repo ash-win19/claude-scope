@@ -3,9 +3,16 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ExtractedFrame } from './types/vision.types';
+import {
+  computeExtractFps,
+  dropConsecutiveDuplicateFrames,
+  resolveDurationSeconds,
+} from './frame-selection';
 
 export interface FrameExtractionOptions {
   maxFrames?: number;
+  /** Client-recorded elapsed time, used when ffprobe cannot read duration. */
+  durationMs?: number;
 }
 
 @Injectable()
@@ -31,14 +38,18 @@ export class FrameExtractionService {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    let duration = await this.getVideoDuration(videoPath);
-    if (!duration || !isFinite(duration) || duration <= 0) {
+    const probeDuration = await this.getVideoDuration(videoPath);
+    const duration = resolveDurationSeconds(probeDuration, options?.durationMs);
+    if (!probeDuration && options?.durationMs) {
+      this.logger.warn(
+        `ffprobe returned no duration; using client durationMs=${options.durationMs}`,
+      );
+    } else if (!duration) {
       this.logger.warn(`Could not determine video duration, defaulting to 1fps extraction`);
-      duration = 0;
     }
     this.logger.log(`Video duration: ${duration}s`);
 
-    const fps = duration <= 30 ? 1 : maxFrames / duration;
+    const fps = computeExtractFps(duration, maxFrames);
     this.logger.log(`Using fps: ${fps.toFixed(4)} (maxFrames: ${maxFrames})`);
 
     const outputPattern = path.join(outputDir, 'frame-%04d.png');
@@ -63,20 +74,18 @@ export class FrameExtractionService {
       );
     }
 
-    const cappedFiles = files.slice(0, maxFrames);
-    this.logger.log(
-      `Extracted ${files.length} frames, using ${cappedFiles.length} (cap: ${maxFrames})`,
-    );
+    const allFrames: ExtractedFrame[] = files.map((file, index) => ({
+      frameId: `frame_${String(index).padStart(4, '0')}`,
+      timestampMs: Math.round((index / fps) * 1000),
+      filePath: path.join(outputDir, file),
+      format: 'png' as const,
+    }));
 
-    const frames: ExtractedFrame[] = cappedFiles.map((file, index) => {
-      const timestampMs = Math.round((index / fps) * 1000);
-      return {
-        frameId: `frame_${String(index).padStart(4, '0')}`,
-        timestampMs,
-        filePath: path.join(outputDir, file),
-        format: 'png' as const,
-      };
-    });
+    const uniqueFrames = dropConsecutiveDuplicateFrames(allFrames);
+    const frames = uniqueFrames.slice(0, maxFrames);
+    this.logger.log(
+      `Extracted ${files.length} frames, ${uniqueFrames.length} unique, using ${frames.length} (cap: ${maxFrames})`,
+    );
 
     return frames;
   }

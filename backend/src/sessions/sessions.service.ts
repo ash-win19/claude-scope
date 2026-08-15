@@ -12,6 +12,7 @@ import { sessions, frames, sessionAnalysis, AnalysisJson } from '../database/sch
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { SynthesisService } from '../recordings/synthesis.service';
+import { resolveAnalysisJson } from './analysis-source';
 
 @Injectable()
 export class SessionsService {
@@ -196,9 +197,18 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
 
-    this.logger.log(`[${sessionId}] Session status=${session.status}, promptStatus=${session.promptStatus}, hasAnalysis=${!!session.analysis}`);
+    const [analysisRow] = await this.db
+      .select()
+      .from(sessionAnalysis)
+      .where(eq(sessionAnalysis.sessionId, sessionId))
+      .limit(1);
 
-    const analysis = session.analysis as AnalysisJson | null;
+    const analysis = resolveAnalysisJson(
+      session.analysis as AnalysisJson | null,
+      analysisRow ?? null,
+    );
+
+    this.logger.log(`[${sessionId}] Session status=${session.status}, promptStatus=${session.promptStatus}, hasAnalysis=${!!analysis}`);
 
     // Guard: no analysis data available
     if (!analysis) {

@@ -118,6 +118,7 @@ const Processing: React.FC = () => {
         seedUrl: recordingContext.seedUrl,
         notes: recordingContext.notes || undefined,
         agentTarget: recordingContext.agentTarget,
+        durationMs: artifact.durationMs,
       });
 
       if (response.status !== 'complete') {
