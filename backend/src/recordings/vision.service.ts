@@ -39,6 +39,7 @@ export class VisionService {
   private readonly client: Anthropic | null;
   // claude-sonnet-4-20250514 retired 2026-06-15; current Sonnet API ID.
   private readonly defaultModel = 'claude-sonnet-5';
+  private static readonly CONCURRENCY = 4;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
@@ -178,18 +179,24 @@ export class VisionService {
   }
 
   /**
-   * Analyzes multiple frames sequentially and returns all results.
+   * Analyzes frames in small parallel batches.
    * Partial failures are tolerated (individual frames may have success: false).
    */
   async analyzeFrames(frames: ExtractedFrame[], options?: VisionRequestOptions): Promise<FrameAnalysisResult[]> {
     const usingUserKey = !!options?.apiKey;
     const model = options?.model || this.defaultModel;
-    this.logger.log(`Starting analysis of ${frames.length} frames (userKey: ${usingUserKey}, model: ${model})`);
+    const concurrency = VisionService.CONCURRENCY;
+    this.logger.log(
+      `Starting analysis of ${frames.length} frames (userKey: ${usingUserKey}, model: ${model}, concurrency: ${concurrency})`,
+    );
     const results: FrameAnalysisResult[] = [];
 
-    for (const frame of frames) {
-      const result = await this.analyzeFrame(frame, options);
-      results.push(result);
+    for (let i = 0; i < frames.length; i += concurrency) {
+      const batch = frames.slice(i, i + concurrency);
+      const batchResults = await Promise.all(
+        batch.map((frame) => this.analyzeFrame(frame, options)),
+      );
+      results.push(...batchResults);
     }
 
     const successCount = results.filter((r) => r.success).length;

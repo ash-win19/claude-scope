@@ -74,7 +74,9 @@ export class RecordingsService {
         frameExtraction: { status: 'running', startedAt: new Date().toISOString() },
       });
       this.logger.log(`[${sessionId}] Extracting frames...`);
-      const extractedFrames = await this.frameExtraction.extractFrames(videoPath, framesDir);
+      const extractedFrames = await this.frameExtraction.extractFrames(videoPath, framesDir, {
+        durationMs: dto.durationMs,
+      });
       this.logger.log(`[${sessionId}] Extracted ${extractedFrames.length} frames`);
       await this.updateStatus(sessionId, {
         frameExtraction: { status: 'complete', completedAt: new Date().toISOString(), detail: `${extractedFrames.length} frames` },
@@ -214,37 +216,7 @@ export class RecordingsService {
         });
       }
 
-      // 10. Build merged analysis artifact
-      const analysisPayload = {
-        timeline: {
-          summary: timeline.summary,
-          durationMs: timeline.durationMs,
-          frameCount: timeline.frameCount,
-          failedFrames: timeline.failedFrames,
-          events: timeline.events.map((e) => ({
-            timestampMs: e.timestampMs,
-            frameId: e.frameId,
-            type: e.type,
-            summary: e.summary,
-            elements: e.elements,
-          })),
-        },
-        inspection: {
-          urlsInspected: inspectionResult.urlsInspected,
-          snapshots: inspectionResult.snapshots.map((s) => ({
-            url: s.url,
-            ariaTree: s.ariaTree,
-            counts: s.counts,
-            success: s.success,
-            error: s.error,
-          })),
-          durationMs: inspectionResult.durationMs,
-        },
-        visionSuccessCount: successCount,
-        totalFrames: visionResults.length,
-      };
-
-      // 11. Update session row
+      // 10. Update session row with metadata only. Analysis lives in session_analysis.
       const processingMs = Date.now() - startTime;
 
       await this.db.update(sessions).set({
@@ -252,13 +224,11 @@ export class RecordingsService {
         frameCount: persistedFrames.length,
         urlCount: inspectionResult.urlsInspected.length,
         processingTime: processingMs,
-        analysis: analysisPayload,
         promptStatus: 'not_started',
         urls: inspectionResult.urlsInspected,
         duration: Math.round(timeline.durationMs / 1000),
         seedUrl: dto.seedUrl,
         notes: dto.notes ?? null,
-        inspectionJson: inspectionResult,
         inspectionDurationMs: inspectionResult.durationMs,
         updatedAt: new Date(),
       }).where(eq(sessions.id, sessionId));

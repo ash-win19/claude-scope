@@ -117,6 +117,7 @@ const mockDto = {
   seedUrl: 'https://example.com',
   notes: 'Test notes',
   agentTarget: 'CLAUDE_CODE' as const,
+  durationMs: 8000,
 };
 
 describe('RecordingsService', () => {
@@ -160,6 +161,11 @@ describe('RecordingsService', () => {
     const result = await service.processUpload('user_1', mockFile, mockDto);
 
     expect(mocks.mockVision.analyzeFrames).toHaveBeenCalled();
+    expect(mocks.mockFrameExtraction.extractFrames).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.objectContaining({ durationMs: 8000 }),
+    );
     expect(mocks.mockPlaywright.inspectUrls).toHaveBeenCalledWith([mockDto.seedUrl]);
 
     expect(result.status).toBe('complete');
@@ -225,5 +231,14 @@ describe('RecordingsService', () => {
     const result = await service.processUpload('user_1', mockFile, mockDto);
 
     expect(result.status).toBe('complete');
+  });
+
+  it('does not persist analysis blobs on the sessions row', async () => {
+    await service.processUpload('user_1', mockFile, mockDto);
+
+    const completeCall = mockUpdateSet.mock.calls.find((c: any[]) => c[0]?.status === 'complete');
+    expect(completeCall).toBeDefined();
+    expect(completeCall![0]).not.toHaveProperty('analysis');
+    expect(completeCall![0]).not.toHaveProperty('inspectionJson');
   });
 });
