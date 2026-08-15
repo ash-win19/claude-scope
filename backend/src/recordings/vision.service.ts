@@ -29,7 +29,7 @@ interface VisionAnalysisResponse {
 export interface VisionRequestOptions {
   /** A user-provided Anthropic API key. When set, a per-request client is created. */
   apiKey?: string;
-  /** The model to use for analysis. Defaults to claude-sonnet-4-20250514. */
+  /** The model to use for analysis. Defaults to claude-sonnet-5. */
   model?: string;
 }
 
@@ -37,7 +37,8 @@ export interface VisionRequestOptions {
 export class VisionService {
   private readonly logger = new Logger(VisionService.name);
   private readonly client: Anthropic | null;
-  private readonly defaultModel = 'claude-sonnet-4-20250514';
+  // claude-sonnet-4-20250514 retired 2026-06-15; current Sonnet API ID.
+  private readonly defaultModel = 'claude-sonnet-5';
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');

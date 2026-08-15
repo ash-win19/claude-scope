@@ -16,6 +16,15 @@ export interface ProviderConfig {
   docsUrl: string;
 }
 
+/** Current Anthropic Claude API IDs. See https://platform.claude.com/docs/en/about-claude/models/overview */
+export const DEFAULT_ANTHROPIC_MODEL_ID = 'claude-sonnet-5';
+
+const RETIRED_ANTHROPIC_MODEL_IDS: Record<string, string> = {
+  'claude-sonnet-4-20250514': DEFAULT_ANTHROPIC_MODEL_ID,
+  'claude-opus-4-20250514': 'claude-opus-5',
+  'claude-haiku-3-5-20241022': 'claude-haiku-4-5-20251001',
+};
+
 export const PROVIDERS: ProviderConfig[] = [
   {
     id: 'anthropic',
@@ -24,9 +33,10 @@ export const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-ant-api03-...',
     docsUrl: 'https://docs.anthropic.com/en/api/getting-started',
     models: [
-      { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', supportsImages: true },
-      { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', supportsImages: true },
-      { id: 'claude-haiku-3-5-20241022', name: 'Claude Haiku 3.5', supportsImages: true },
+      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', supportsImages: true },
+      { id: 'claude-opus-5', name: 'Claude Opus 5', supportsImages: true },
+      { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', supportsImages: true },
+      { id: 'claude-fable-5', name: 'Claude Fable 5', supportsImages: true },
     ],
   },
   {
@@ -73,7 +83,7 @@ export const useProviderStore = create<ProviderState>()(
     (set) => ({
       savedCredentials: {},
       activeProviderId: 'anthropic',
-      activeModelId: 'claude-sonnet-4-20250514',
+      activeModelId: DEFAULT_ANTHROPIC_MODEL_ID,
       setSavedCredential: (providerId, credentialId, maskedKey) =>
         set((s) => ({
           savedCredentials: { ...s.savedCredentials, [providerId]: { credentialId, maskedKey } },
@@ -89,20 +99,22 @@ export const useProviderStore = create<ProviderState>()(
     }),
     {
       name: 'cs-providers',
-      // Migrate from old schema that stored plaintext keys
       migrate: (persisted: unknown) => {
         const state = persisted as Record<string, unknown>;
         // If the old `keys` field exists, drop it — those were plaintext keys
         if (state && typeof state === 'object' && 'keys' in state) {
           delete state.keys;
         }
-        // Ensure savedCredentials exists
         if (!state.savedCredentials) {
           state.savedCredentials = {};
         }
+        const currentModel = state.activeModelId;
+        if (typeof currentModel === 'string' && RETIRED_ANTHROPIC_MODEL_IDS[currentModel]) {
+          state.activeModelId = RETIRED_ANTHROPIC_MODEL_IDS[currentModel];
+        }
         return state as ProviderState;
       },
-      version: 1,
+      version: 2,
     }
   )
 );
