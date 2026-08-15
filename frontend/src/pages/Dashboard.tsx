@@ -10,7 +10,7 @@ import { CSEmptyState } from '@/components/ui/CSEmptyState';
 import { CSPageSkeleton } from '@/components/ui/CSPageSkeleton';
 import { Film, Plus, FolderOpen, Settings, CheckCircle2, Zap, Timer } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
-import type { Session, SessionStats } from '@/lib/api';
+import type { SessionSummary, SessionStats } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
@@ -25,7 +25,7 @@ function getFirstName(fullName: string | undefined): string | null {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const [sessionList, setSessionList] = useState<Session[]>([]);
+  const [sessionList, setSessionList] = useState<SessionSummary[]>([]);
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
     async function load() {
       try {
         const [list, statsData] = await Promise.all([
-          sessionsApi.list(),
+          sessionsApi.list({ limit: 5 }),
           sessionsApi.stats(),
         ]);
         setSessionList(list);
@@ -122,7 +122,7 @@ const Dashboard: React.FC = () => {
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {sessionList.slice(0, 5).map((session) => (
+          {sessionList.map((session) => (
             <CSSessionRow
               key={session.id}
               title={session.title}
