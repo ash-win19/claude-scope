@@ -270,7 +270,7 @@ export const ScopeReactor: React.FC = () => {
           />
         </div>
       </div>
-      <div className="sr-only" aria-live="polite" aria-atomic="true">
+      <div className="sr-only" aria-live={interacted ? 'polite' : 'off'} aria-atomic="true">
         {active.issue}. {active.prompt}
       </div>
     </div>
