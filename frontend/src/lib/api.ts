@@ -88,7 +88,7 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface Session {
+export interface SessionSummary {
   id: string;
   userId: string;
   title: string;
@@ -96,15 +96,18 @@ export interface Session {
   status: 'processing' | 'complete' | 'error';
   duration: number;
   frameCount: number;
-  urls: string[];
   urlCount: number;
   agentTarget: 'CLAUDE_CODE' | 'CODEX' | 'CURSOR' | 'RAW';
   processingTime: number;
-  prompt: string;
   promptStatus?: string;
-  promptError?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Session extends SessionSummary {
+  urls: string[];
+  prompt: string;
+  promptError?: string;
   inspectionJson?: InspectionSummary | null;
   inspectionDurationMs?: number | null;
 }
@@ -319,7 +322,10 @@ export const auth = {
 
 // ── Sessions API ──
 export const sessions = {
-  list: () => request<Session[]>('/sessions'),
+  list: (opts?: { limit?: number }) => {
+    const qs = opts?.limit != null ? `?limit=${opts.limit}` : '';
+    return request<SessionSummary[]>(`/sessions${qs}`);
+  },
 
   get: (id: string) => request<SessionWithFrames>(`/sessions/${id}`),
 

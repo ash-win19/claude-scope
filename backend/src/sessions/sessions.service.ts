@@ -42,12 +42,31 @@ export class SessionsService {
     return session;
   }
 
-  async findAllByUser(userId: string) {
-    return this.db
-      .select()
+  async findAllByUser(userId: string, limit?: number) {
+    // List views only need metadata. Selecting prompt / analysis /
+    // inspectionJson / processingStatus would ship megabytes of JSON
+    // that the dashboard and sessions index immediately discard.
+    const query = this.db
+      .select({
+        id: sessions.id,
+        userId: sessions.userId,
+        title: sessions.title,
+        status: sessions.status,
+        duration: sessions.duration,
+        frameCount: sessions.frameCount,
+        urlCount: sessions.urlCount,
+        agentTarget: sessions.agentTarget,
+        seedUrl: sessions.seedUrl,
+        processingTime: sessions.processingTime,
+        promptStatus: sessions.promptStatus,
+        createdAt: sessions.createdAt,
+        updatedAt: sessions.updatedAt,
+      })
       .from(sessions)
       .where(eq(sessions.userId, userId))
       .orderBy(desc(sessions.createdAt));
+
+    return limit !== undefined ? query.limit(limit) : query;
   }
 
   async findOne(userId: string, sessionId: string) {

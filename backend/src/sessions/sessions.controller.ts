@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
+import { ListSessionsQueryDto } from './dto/list-sessions-query.dto';
 
 @ApiTags('Sessions')
 @ApiBearerAuth()
@@ -31,10 +33,10 @@ export class SessionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all sessions for the current user' })
-  findAll(@Req() req: Request) {
+  @ApiOperation({ summary: 'List session metadata for the current user' })
+  findAll(@Req() req: Request, @Query() query: ListSessionsQueryDto) {
     const { id } = req.user as { id: string };
-    return this.sessionsService.findAllByUser(id);
+    return this.sessionsService.findAllByUser(id, query.limit);
   }
 
   @Get('stats')

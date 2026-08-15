@@ -10,13 +10,13 @@ import { CSEmptyState } from '@/components/ui/CSEmptyState';
 import { CSListSkeleton } from '@/components/ui/CSListSkeleton';
 import { Film, SlidersHorizontal, Search } from 'lucide-react';
 import { sessions as sessionsApi } from '@/lib/api';
-import type { Session } from '@/lib/api';
+import type { SessionSummary } from '@/lib/api';
 import { formatDuration, formatTimestamp } from '@/lib/utils';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const Sessions: React.FC = () => {
   const navigate = useNavigate();
-  const [sessionList, setSessionList] = useState<Session[]>([]);
+  const [sessionList, setSessionList] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
