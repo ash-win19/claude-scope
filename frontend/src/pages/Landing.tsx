@@ -123,7 +123,7 @@ const Landing: React.FC = () => {
             aria-hidden
           />
 
-          <div className="relative mx-auto grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-10 lg:gap-12 items-center" style={{ maxWidth: 1120 }}>
+          <div className="relative mx-auto grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-10 lg:gap-12 items-start" style={{ maxWidth: 1120 }}>
             <div className="cs-hero-rise text-center lg:text-left">
               <CSMonoLabel>Developer tool · Free beta</CSMonoLabel>
               <h1

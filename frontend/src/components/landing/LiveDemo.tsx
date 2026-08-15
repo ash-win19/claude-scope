@@ -99,7 +99,7 @@ export const LiveDemo: React.FC = () => {
           />
         </div>
 
-        <div className="relative min-h-[420px] sm:min-h-[460px]" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
+        <div className="relative h-[420px] sm:h-[460px] overflow-hidden" style={{ backgroundColor: 'var(--cs-bg-base)' }}>
           <div key={scene.id} className="h-full">
             {scene.id === 'record' && <RecordScene />}
             {scene.id === 'extract' && <ExtractScene />}
@@ -117,7 +117,7 @@ export const LiveDemo: React.FC = () => {
               className="w-1.5 h-1.5 rounded-full shrink-0"
               style={{ backgroundColor: scene.color }}
             />
-            <p className="text-sm truncate" style={{ color: 'var(--cs-text-secondary)' }}>
+            <p className="text-sm truncate whitespace-nowrap min-w-0" style={{ color: 'var(--cs-text-secondary)' }}>
               <span className="font-semibold" style={{ color: 'var(--cs-text-primary)' }}>{scene.label}.</span>{' '}
               {scene.caption}
             </p>

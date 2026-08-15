@@ -63,6 +63,29 @@ const polar = (angle: number, r: number, cx = 100, cy = 100) => {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 };
 
+/** Stack every variant in one grid cell so the slot is always as tall as the longest copy. */
+const SwapCopy: React.FC<{
+  items: { id: string; text: string }[];
+  activeId: string;
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ items, activeId, className = '', style }) => (
+  <div className="grid" aria-hidden>
+    {items.map((item) => (
+      <p
+        key={item.id}
+        className={`col-start-1 row-start-1 ${className}`}
+        style={{
+          ...style,
+          visibility: item.id === activeId ? 'visible' : 'hidden',
+        }}
+      >
+        {item.text}
+      </p>
+    ))}
+  </div>
+);
+
 export const ScopeReactor: React.FC = () => {
   const reduced = usePrefersReducedMotion();
   const labelId = useId();
@@ -165,7 +188,7 @@ export const ScopeReactor: React.FC = () => {
           <CSBadge variant="accent">Live inspect</CSBadge>
         </div>
         <p className="hidden sm:block text-[11px] truncate" style={{ color: 'var(--cs-text-muted)' }}>
-          {interacted ? 'Hover to inspect · click to lock · arrows to cycle' : 'Auto-inspecting a broken checkout — hover to take over'}
+          Hover to inspect · click to lock · arrows to cycle
         </p>
       </div>
 
@@ -227,19 +250,28 @@ export const ScopeReactor: React.FC = () => {
       <div
         className="border-t px-4 py-3 grid sm:grid-cols-2 gap-3"
         style={{ borderColor: 'var(--cs-border-subtle)', backgroundColor: 'var(--cs-bg-raised)' }}
-        aria-live="polite"
-        aria-atomic="true"
       >
-        <div>
+        <div className="min-w-0">
           <CSMonoLabel>Issue</CSMonoLabel>
-          <p className="text-sm mt-1 font-medium" style={{ color: 'var(--cs-text-primary)' }}>{active.issue}</p>
+          <SwapCopy
+            items={TARGETS.map((t) => ({ id: t.id, text: t.issue }))}
+            activeId={active.id}
+            className="text-sm mt-1 font-medium leading-5"
+            style={{ color: 'var(--cs-text-primary)' }}
+          />
         </div>
         <div className="min-w-0">
           <CSMonoLabel>Prompt fragment</CSMonoLabel>
-          <p className="text-xs mt-1 font-mono leading-relaxed" style={{ color: 'var(--cs-text-secondary)' }}>
-            {active.prompt}
-          </p>
+          <SwapCopy
+            items={TARGETS.map((t) => ({ id: t.id, text: t.prompt }))}
+            activeId={active.id}
+            className="text-xs mt-1 font-mono leading-5"
+            style={{ color: 'var(--cs-text-secondary)' }}
+          />
         </div>
+      </div>
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {active.issue}. {active.prompt}
       </div>
     </div>
   );
@@ -450,20 +482,41 @@ const ReactorHud: React.FC<{ active: InspectTarget; firing: boolean }> = ({ acti
     </svg>
 
     <div className="w-full space-y-2">
-      <LaneRow icon={<Eye size={12} />} label="Vision" value={active.vision} color="var(--cs-teal)" />
-      <LaneRow icon={<Globe size={12} />} label="Playwright" value={active.aria} color="var(--cs-secondary)" />
+      <LaneRow
+        icon={<Eye size={12} />}
+        label="Vision"
+        items={TARGETS.map((t) => ({ id: t.id, text: t.vision }))}
+        activeId={active.id}
+        color="var(--cs-teal)"
+      />
+      <LaneRow
+        icon={<Globe size={12} />}
+        label="Playwright"
+        items={TARGETS.map((t) => ({ id: t.id, text: t.aria }))}
+        activeId={active.id}
+        color="var(--cs-secondary)"
+      />
     </div>
   </aside>
 );
 
-const LaneRow: React.FC<{ icon: React.ReactNode; label: string; value: string; color: string }> = ({
-  icon, label, value, color,
-}) => (
+const LaneRow: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  items: { id: string; text: string }[];
+  activeId: string;
+  color: string;
+}> = ({ icon, label, items, activeId, color }) => (
   <div className="rounded-lg border px-2.5 py-2" style={{ borderColor: 'var(--cs-border-subtle)', backgroundColor: 'var(--cs-bg-surface)' }}>
     <div className="flex items-center gap-1.5 mb-1" style={{ color }}>
       {icon}
       <span className="font-mono text-[10px] uppercase tracking-wide">{label}</span>
     </div>
-    <p className="text-[10px] leading-relaxed font-mono" style={{ color: 'var(--cs-text-secondary)' }}>{value}</p>
+    <SwapCopy
+      items={items}
+      activeId={activeId}
+      className="text-[10px] leading-4 font-mono"
+      style={{ color: 'var(--cs-text-secondary)' }}
+    />
   </div>
 );
